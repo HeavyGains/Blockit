@@ -4,7 +4,7 @@ import {
   newScore, scorePlacement, boardEmpty,
   dealTrickTray, TRICK_CHANCE, TRICK_BONUS,
   applyGravity, scoreChain, MODES,
-} from './logic.js?v=9';
+} from './logic.js?v=10';
 
 const LIFT = 56;      // px the dragged piece floats above the finger, so it stays visible
 const CLEAR_MS = 220; // matches the pop animation in style.css
@@ -398,11 +398,44 @@ function afterTurn() {
     tray = dealNext();
   }
   draw();
-  if (isGameOver(board, tray)) {
+  if (!isGameOver(board, tray)) {
+    saveGame();
+  } else {
+    forgetGame(); // a finished game isn't resumed; next time starts fresh
     document.getElementById('final').textContent = score.score.toLocaleString();
     document.getElementById('newbest').hidden = !newBest;
     overEl.hidden = false;
   }
+}
+
+// ---------- Saved games ----------
+// Each mode keeps its own game in progress on this device, so switching modes
+// (or closing the page) and coming back picks up where you left off.
+
+const gameKey = () => `blockit.game.${mode}`;
+
+function saveGame() {
+  store.set(gameKey(), { board, tray, score, trickSet });
+}
+
+function forgetGame() {
+  try { localStorage.removeItem(gameKey()); } catch { /* nothing saved */ }
+}
+
+// Load this mode's saved game. False if there isn't a usable one.
+function loadGame() {
+  const g = store.get(gameKey(), null);
+  const ok = g && Array.isArray(g.board) && g.board.length === SIZE
+    && g.board.every(line => Array.isArray(line) && line.length === SIZE)
+    && Array.isArray(g.tray) && g.tray.length === 3 && g.score && typeof g.score.score === 'number';
+  if (!ok || isGameOver(g.board, g.tray)) return false;
+  board = g.board;
+  tray = g.tray;
+  score = g.score;
+  trickSet = !!g.trickSet;
+  newBest = false;
+  overEl.hidden = true;
+  return true;
 }
 
 function newGame() {
@@ -412,13 +445,15 @@ function newGame() {
   score = newScore();
   newBest = false;
   overEl.hidden = true;
+  saveGame();
   draw();
 }
 
 document.getElementById('again').addEventListener('click', newGame);
 
 // ---------- Mode menu ----------
-// Picking a mode starts a new game in it. Picking the one you're in just closes.
+// Picking a mode resumes its saved game, or starts one. Picking the one you're
+// in just closes. New game starts the current mode over.
 
 const modesEl = document.getElementById('modes');
 const modeListEl = document.getElementById('modelist');
@@ -440,7 +475,7 @@ function drawModes() {
       mode = m.id;
       store.set('blockit.mode', mode);
       bests = store.get(bestKey(), {});
-      newGame();
+      if (loadGame()) draw(); else newGame();
     });
     return b;
   }));
@@ -451,8 +486,12 @@ modeTagEl.addEventListener('click', () => {
   drawModes();
   modesEl.hidden = false;
 });
+document.getElementById('newgame').addEventListener('click', () => {
+  modesEl.hidden = true;
+  newGame();
+});
 document.getElementById('modes-close').addEventListener('click', () => { modesEl.hidden = true; });
 modesEl.addEventListener('click', e => { if (e.target === modesEl) modesEl.hidden = true; });
 
 applyStyle();
-draw();
+if (loadGame()) draw(); else newGame();
