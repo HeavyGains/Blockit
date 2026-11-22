@@ -2,7 +2,7 @@
 
 A block-placing puzzle for Jason and Amy, played in the phone browser.
 
-Drag the three pieces from the tray onto the 9x9 board. Fill a whole row or
+Drag the three pieces from the tray onto the 8x8 board. Fill a whole row or
 column to clear it. Once all three are placed you get three new ones. The game
 ends when none of the pieces left in the tray fits.
 

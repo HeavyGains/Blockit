@@ -13,10 +13,10 @@ function fillRow(board, r, except = []) {
   return board;
 }
 
-test('board is 9x9 and empty', () => {
+test('board is 8x8 and empty', () => {
   const b = emptyBoard();
-  assert.equal(b.length, 9);
-  assert.ok(b.every(line => line.length === 9 && line.every(v => v === null)));
+  assert.equal(b.length, 8);
+  assert.ok(b.every(line => line.length === 8 && line.every(v => v === null)));
 });
 
 test('every piece starts at its top-left and has no duplicate cells', () => {
@@ -35,16 +35,16 @@ test('a piece can go on empty cells but not off the edge', () => {
   const b = emptyBoard();
   const bar = piece('bar3h');
   assert.ok(canPlace(b, bar, 0, 0));
-  assert.ok(canPlace(b, bar, 8, 6));
-  assert.ok(!canPlace(b, bar, 8, 7)); // would stick out on the right
-  assert.ok(!canPlace(b, bar, 9, 0)); // below the board
+  assert.ok(canPlace(b, bar, 7, 5));
+  assert.ok(!canPlace(b, bar, 7, 6)); // would stick out on the right
+  assert.ok(!canPlace(b, bar, 8, 0)); // below the board
   assert.ok(!canPlace(b, bar, 0, -1));
 });
 
 test('a piece cannot overlap a filled cell', () => {
-  const b = place(emptyBoard(), piece('dot'), 4, 5, 1);
-  assert.ok(!canPlace(b, piece('bar3h'), 4, 3));
-  assert.ok(canPlace(b, piece('bar3h'), 4, 6));
+  const b = place(emptyBoard(), piece('dot'), 4, 4, 1);
+  assert.ok(!canPlace(b, piece('bar3h'), 4, 2));
+  assert.ok(canPlace(b, piece('bar3h'), 4, 5));
 });
 
 test('place does not change the old board', () => {
@@ -89,10 +89,10 @@ test('a filled 3x3 box does not clear', () => {
 });
 
 test('placing the last gap of a row completes it', () => {
-  const b = fillRow(emptyBoard(), 8, [3, 4]);
+  const b = fillRow(emptyBoard(), 7, [3, 4]);
   assert.deepEqual(fullLines(b).rows, []);
-  const after = place(b, piece('bar2h'), 8, 3, 1);
-  assert.deepEqual(fullLines(after).rows, [8]);
+  const after = place(b, piece('bar2h'), 7, 3, 1);
+  assert.deepEqual(fullLines(after).rows, [7]);
 });
 
 test('game over only when no piece left in the tray fits', () => {

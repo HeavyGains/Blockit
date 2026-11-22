@@ -2,7 +2,7 @@
 // A board is SIZE rows of SIZE cells; a cell is null (empty) or a color index.
 // A piece is { id, cells: [[row, col], ...] } with its top-left at 0,0. No rotation.
 
-export const SIZE = 9;
+export const SIZE = 8;
 export const TRAY_SIZE = 3;
 export const COLORS = 6; // color indexes 0..COLORS-1, picked in the CSS
 
