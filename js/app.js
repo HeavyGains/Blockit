@@ -2,6 +2,7 @@ import {
   SIZE, emptyBoard, canPlace, place, fullLines, clearLines,
   isGameOver, dealTray, trayEmpty, fitsAnywhere, previewLines,
   newScore, scorePlacement, boardEmpty,
+  dealTrickTray, TRICK_CHANCE, TRICK_BONUS,
 } from './logic.js';
 
 const LIFT = 56;      // px the dragged piece floats above the finger, so it stays visible
@@ -21,6 +22,7 @@ let tray = dealTray();
 let busy = false; // true while lines are clearing
 let score = newScore();
 let newBest = false; // beat the saved best during this game
+let trickSet = false; // the tray in play is a trick set
 
 // ---------- Players and best scores (saved on this device) ----------
 
@@ -134,6 +136,28 @@ function showPop(piece, row, col, result) {
   el.addEventListener('animationend', () => el.remove());
 }
 
+// "Solved!" when every piece of a trick set got placed. Shown near the top,
+// clear of the last move's points.
+function showSolved() {
+  const el = document.createElement('div');
+  el.className = 'pop solved';
+  el.style.top = '18%';
+  el.style.left = '50%';
+  el.textContent = 'Solved!';
+  const small = document.createElement('small');
+  small.textContent = `tricky set +${TRICK_BONUS}`;
+  el.appendChild(small);
+  boardEl.appendChild(el);
+  el.addEventListener('animationend', () => el.remove());
+}
+
+// About 1 set in TRICK_CHANCE is a trick set when the board allows one.
+function dealNext() {
+  const trick = Math.random() < TRICK_CHANCE ? dealTrickTray(Math.random, board) : null;
+  trickSet = !!trick;
+  return trick || dealTray(Math.random, board);
+}
+
 // ---------- Dragging ----------
 
 let drag = null; // { index, piece, pointerId, slot }
@@ -244,7 +268,14 @@ function placePiece(index, piece, row, col) {
 }
 
 function afterTurn() {
-  if (trayEmpty(tray)) tray = dealTray(Math.random, board);
+  if (trayEmpty(tray)) {
+    if (trickSet) {
+      score = { ...score, score: score.score + TRICK_BONUS };
+      saveBest();
+      showSolved();
+    }
+    tray = dealNext();
+  }
   draw();
   if (isGameOver(board, tray)) {
     document.getElementById('final').textContent = score.score.toLocaleString();
@@ -256,6 +287,7 @@ function afterTurn() {
 document.getElementById('again').addEventListener('click', () => {
   board = emptyBoard();
   tray = dealTray();
+  trickSet = false;
   score = newScore();
   newBest = false;
   overEl.hidden = true;

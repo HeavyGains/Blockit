@@ -141,6 +141,10 @@ main {
 
 .pop small { display: block; font-size: 15px; color: var(--c1); }
 
+.pop.solved { font-size: 30px; color: var(--c1); animation-duration: 1400ms; }
+
+.pop.solved small { color: #fff; }
+
 @keyframes rise {
   0% { opacity: 0; transform: translate(-50%, -30%) scale(0.7); }
   15% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
