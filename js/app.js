@@ -1,10 +1,11 @@
 import {
-  SIZE, emptyBoard, canPlace, place, fullLines, clearLines,
+  SIZE, emptyBoard, canPlace, place, fullLines,
   isGameOver, dealTray, trayEmpty, fitsAnywhere, previewLines,
   newScore, scorePlacement, boardEmpty,
   dealTrickTray, TRICK_CHANCE, TRICK_BONUS,
   applyGravity, scoreChain, MODES,
-} from './logic.js?v=10';
+  addSpecials, resolveClear, specialPoints, colorOf, specialOf,
+} from './logic.js?v=11';
 
 const LIFT = 56;      // px the dragged piece floats above the finger, so it stays visible
 const CLEAR_MS = 220; // matches the pop animation in style.css
@@ -45,9 +46,12 @@ let player = PLAYERS.includes(store.get('blockit.player')) ? store.get('blockit.
 
 let mode = MODES.some(m => m.id === store.get('blockit.mode')) ? store.get('blockit.mode') : 'classic';
 const gravity = () => mode === 'gravity';
+let specials = store.get('blockit.specials', false) === true;
 
-// Classic keeps the original 'blockit.best'; other modes get their own.
-const bestKey = () => (mode === 'classic' ? 'blockit.best' : `blockit.best.${mode}`);
+// Each mode, with or without special blocks, keeps its own game and best.
+// Classic without specials keeps the original 'blockit.best'.
+const variant = () => (specials ? `${mode}-special` : mode);
+const bestKey = () => (variant() === 'classic' ? 'blockit.best' : `blockit.best.${variant()}`);
 let bests = store.get(bestKey(), {});
 const best = () => bests[player] || 0;
 
@@ -136,21 +140,24 @@ for (let i = 0; i < SIZE * SIZE; i++) {
 function drawBoard() {
   board.forEach((line, r) => line.forEach((v, c) => {
     const el = cells[r * SIZE + c];
-    if (v === null) el.removeAttribute('data-c'); else el.dataset.c = v;
+    if (v === null) el.removeAttribute('data-c'); else el.dataset.c = colorOf(v);
+    const kind = specialOf(v);
+    if (kind) el.dataset.s = kind; else el.removeAttribute('data-s');
   }));
 }
 
 function pieceEl(piece) {
   const el = document.createElement('div');
   el.className = 'piece';
-  for (const [r, c] of piece.cells) {
+  piece.cells.forEach(([r, c], i) => {
     const cell = document.createElement('div');
     cell.className = 'cell';
     cell.dataset.c = piece.color;
+    if (piece.special && piece.special.i === i) cell.dataset.s = piece.special.s;
     cell.style.setProperty('--r', r + 1);
     cell.style.setProperty('--col', c + 1);
     el.appendChild(cell);
-  }
+  });
   return el;
 }
 
@@ -173,7 +180,7 @@ function drawScore() {
   streakEl.textContent = `x${score.streak}`;
   whoEl.textContent = player;
   bestEl.textContent = best().toLocaleString();
-  modeTagEl.textContent = `${MODES.find(m => m.id === mode).name} ▾`;
+  modeTagEl.textContent = `${MODES.find(m => m.id === mode).name}${specials ? ' · Specials' : ''} ▾`;
 }
 
 function draw() {
@@ -197,6 +204,7 @@ function showPop(piece, row, col, result) {
   if (result.chain) notes.push(`chain x${result.chain}`);
   else if (result.streak > 1) notes.push(`streak x${result.streak}`);
   if (result.bonus) notes.push('board clear!');
+  if (result.specialNotes) notes.push(...result.specialNotes);
   if (notes.length) {
     const small = document.createElement('small');
     small.textContent = notes.join(' · ');
@@ -224,6 +232,7 @@ function showSolved() {
 // About 1 set in TRICK_CHANCE is a trick set when the board allows one.
 function dealNext() {
   // Trick sets are solved with Classic rules, so they only come in Classic.
+  if (specials) return addSpecials(dealTray(Math.random, board));
   const trick = !gravity() && Math.random() < TRICK_CHANCE ? dealTrickTray(Math.random, board) : null;
   trickSet = !!trick;
   return trick || dealTray(Math.random, board);
@@ -328,36 +337,55 @@ function placePiece(index, piece, row, col) {
 }
 
 // Flash the full lines, then empty them.
+// Flash the full lines (and any bomb blasts), then empty them. Stones only
+// crack. Returns what the specials did, for scoring.
 async function clearWithFlash(lines) {
-  board.forEach((line, r) => line.forEach((_, c) => {
-    if (lines.rows.includes(r) || lines.cols.includes(c)) cells[r * SIZE + c].classList.add('clearing');
-  }));
+  const res = resolveClear(board, lines);
+  for (const key of res.hit) {
+    const [r, c] = key.split(',').map(Number);
+    if (specialOf(board[r][c]) === 'stone') cells[r * SIZE + c].classList.add('cracking');
+    else cells[r * SIZE + c].classList.add('clearing');
+  }
   await wait(CLEAR_MS);
-  cells.forEach(el => el.classList.remove('clearing'));
-  board = clearLines(board, lines);
+  cells.forEach(el => el.classList.remove('clearing', 'cracking'));
+  board = res.board;
+  drawBoard();
+  return res;
+}
+
+// Add the points specials earned (bomb blasts, stars) to the last score result.
+function addSpecialPoints(res) {
+  const extra = specialPoints(res, score.streak);
+  const notes = [];
+  if (res.blast) notes.push('boom!');
+  if (res.stars) notes.push(res.stars > 1 ? `${res.stars} stars` : 'star!');
+  score = { ...score, score: score.score + extra, gained: score.gained + extra, specialNotes: notes };
 }
 
 // Clears from one placement. In Gravity, blocks then fall, and any lines they
 // fill clear too, again and again (a chain), each step worth more.
 async function resolveClears(piece, row, col, lines) {
-  await clearWithFlash(lines);
+  const res = await clearWithFlash(lines);
   if (!gravity()) {
     score = scorePlacement(score, piece.cells.length, lines, boardEmpty(board));
+    addSpecialPoints(res);
     showPop(piece, row, col, score);
     saveBest();
     return;
   }
   await drop();
   score = scorePlacement(score, piece.cells.length, lines, boardEmpty(board));
+  addSpecialPoints(res);
   showPop(piece, row, col, score);
   saveBest();
   for (let chain = 2; ; chain++) {
     const next = fullLines(board);
     if (!next.rows.length && !next.cols.length) break;
     await wait(CHAIN_PAUSE);
-    await clearWithFlash(next);
+    const step = await clearWithFlash(next);
     await drop();
     score = scoreChain(score, next, chain, boardEmpty(board));
+    addSpecialPoints(step);
     showChainPop(next, score);
     saveBest();
   }
@@ -412,7 +440,7 @@ function afterTurn() {
 // Each mode keeps its own game in progress on this device, so switching modes
 // (or closing the page) and coming back picks up where you left off.
 
-const gameKey = () => `blockit.game.${mode}`;
+const gameKey = () => `blockit.game.${variant()}`;
 
 function saveGame() {
   store.set(gameKey(), { board, tray, score, trickSet });
@@ -440,7 +468,7 @@ function loadGame() {
 
 function newGame() {
   board = emptyBoard();
-  tray = dealTray();
+  tray = specials ? addSpecials(dealTray()) : dealTray();
   trickSet = false;
   score = newScore();
   newBest = false;
@@ -474,16 +502,34 @@ function drawModes() {
       if (m.id === mode) return;
       mode = m.id;
       store.set('blockit.mode', mode);
-      bests = store.get(bestKey(), {});
-      if (loadGame()) draw(); else newGame();
+      switchGame();
     });
     return b;
   }));
 }
 
+// After the mode or the specials switch changes: resume that game, or start one.
+function switchGame() {
+  bests = store.get(bestKey(), {});
+  if (loadGame()) draw(); else newGame();
+}
+
+const specialsBtn = document.getElementById('specials');
+function drawSpecials() {
+  specialsBtn.setAttribute('aria-pressed', String(specials));
+  specialsBtn.querySelector('b').textContent = specials ? 'On' : 'Off';
+}
+specialsBtn.addEventListener('click', () => {
+  specials = !specials;
+  store.set('blockit.specials', specials);
+  drawSpecials();
+  switchGame();
+});
+
 modeTagEl.addEventListener('click', () => {
   if (busy || drag) return;
   drawModes();
+  drawSpecials();
   modesEl.hidden = false;
 });
 document.getElementById('newgame').addEventListener('click', () => {

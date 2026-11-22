@@ -71,9 +71,13 @@ export function canPlace(board, piece, row, col) {
 }
 
 // Returns a new board with the piece placed. Call canPlace first.
+// A piece may carry one special cell: piece.special = { i, s } where i is the
+// index into piece.cells and s is the kind. That cell is stored as { c, s }.
 export function place(board, piece, row, col, color) {
   const next = board.map(line => line.slice());
-  for (const [r, c] of piece.cells) next[row + r][col + c] = color;
+  piece.cells.forEach(([r, c], i) => {
+    next[row + r][col + c] = piece.special && piece.special.i === i ? { c: color, s: piece.special.s } : color;
+  });
   return next;
 }
 
@@ -310,3 +314,75 @@ export const MODES = [
   { id: 'classic', name: 'Classic', about: 'Fill rows and columns to clear them.' },
   { id: 'gravity', name: 'Gravity', about: 'After a clear, blocks fall down. Set off chain reactions!' },
 ];
+
+// ---------- Special blocks ----------
+// With specials on, some pieces carry one special cell:
+//   bomb:  when it clears, it also clears the 3x3 around it (bombs set off bombs).
+//   stone: a clear only cracks it ('crack'); a second clear breaks it.
+//   star:  STAR_BONUS points when it clears.
+// A board cell is null, a color index, or { c: color, s: kind }.
+
+export const SPECIAL_CHANCE = 0.25; // share of pieces that get a special cell
+export const SPECIAL_KINDS = [['bomb', 0.4], ['stone', 0.35], ['star', 0.25]];
+export const STAR_BONUS = 50;
+
+export const colorOf = v => (v !== null && typeof v === 'object' ? v.c : v);
+export const specialOf = v => (v !== null && typeof v === 'object' ? v.s : null);
+
+// Give some pieces of a tray a special cell. Returns new piece objects.
+export function addSpecials(tray, rng = Math.random, chance = SPECIAL_CHANCE) {
+  return tray.map(p => {
+    if (!p || rng() >= chance) return p;
+    let roll = rng(), s = SPECIAL_KINDS[SPECIAL_KINDS.length - 1][0];
+    for (const [kind, w] of SPECIAL_KINDS) { if (roll < w) { s = kind; break; } roll -= w; }
+    return { ...p, special: { i: Math.floor(rng() * p.cells.length), s } };
+  });
+}
+
+// Clear full lines, with specials. Returns the new board and what happened:
+// blast = cells cleared by bombs beyond the lines, stars = stars cleared,
+// cracked = stones that cracked, hit = every cell the clear touched ("r,c").
+export function resolveClear(board, { rows, cols }) {
+  const hit = new Set();
+  for (let r = 0; r < SIZE; r++) {
+    for (let c = 0; c < SIZE; c++) if (rows.includes(r) || cols.includes(c)) hit.add(`${r},${c}`);
+  }
+  const lineCells = hit.size;
+  // Bombs blow up their 3x3, which can reach more bombs.
+  const queue = [...hit];
+  const fired = new Set();
+  while (queue.length) {
+    const key = queue.pop();
+    const [r, c] = key.split(',').map(Number);
+    if (specialOf(board[r][c]) !== 'bomb' || fired.has(key)) continue;
+    fired.add(key);
+    for (let y = r - 1; y <= r + 1; y++) {
+      for (let x = c - 1; x <= c + 1; x++) {
+        if (y < 0 || y >= SIZE || x < 0 || x >= SIZE) continue;
+        const k = `${y},${x}`;
+        if (!hit.has(k)) { hit.add(k); queue.push(k); }
+      }
+    }
+  }
+  const next = board.map(line => line.slice());
+  let blast = 0, stars = 0, cracked = 0;
+  for (const key of hit) {
+    const [r, c] = key.split(',').map(Number);
+    const v = board[r][c];
+    if (v === null) continue;
+    const kind = specialOf(v);
+    if (kind === 'stone') { next[r][c] = { c: v.c, s: 'crack' }; cracked++; continue; }
+    if (kind === 'star') stars++;
+    next[r][c] = null;
+  }
+  for (const key of hit) {
+    const [r, c] = key.split(',').map(Number);
+    if (!(rows.includes(r) || cols.includes(c)) && board[r][c] !== null && specialOf(board[r][c]) !== 'stone') blast++;
+  }
+  return { board: next, blast, stars, cracked, hit: [...hit], lineCells };
+}
+
+// Extra points from specials in one clear, on top of the normal clear points.
+export function specialPoints({ blast, stars }, streak = 1) {
+  return blast * CLEAR_POINTS * Math.max(streak, 1) + stars * STAR_BONUS;
+}
