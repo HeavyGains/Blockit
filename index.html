@@ -10,10 +10,22 @@
   <meta name="mobile-web-app-capable" content="yes">
   <title>BLOCKIT</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <script>
+    // Set the saved style before the page draws, so it doesn't flash.
+    try {
+      const p = JSON.parse(localStorage.getItem('blockit.player')) || 'Jason';
+      const s = JSON.parse(localStorage.getItem('blockit.style')) || {};
+      document.documentElement.dataset.style = s[p] || 'paper';
+    } catch { document.documentElement.dataset.style = 'paper'; }
+  </script>
 </head>
 <body>
   <header class="top">
-    <h1 class="logo">BLOCKIT</h1>
+    <div class="brand">
+      <h1 class="logo">BLOCKIT</h1>
+      <button id="palette" class="icon-btn" type="button" aria-label="Change style">🎨</button>
+    </div>
     <div class="scorebox">
       <span id="score" class="score" aria-live="polite">0</span>
       <span id="streak" class="streak" hidden></span>
@@ -38,6 +50,14 @@
       <p id="newbest" class="newbest" hidden>New best!</p>
       <p class="hint">None of your pieces fit on the board.</p>
       <button id="again" class="primary-btn" type="button">Play again</button>
+    </div>
+  </div>
+
+  <div id="styles" class="overlay" hidden>
+    <div class="sheet">
+      <h2>Style</h2>
+      <div id="swatches" class="swatches"></div>
+      <button id="styles-close" class="text-btn" type="button">Done</button>
     </div>
   </div>
 

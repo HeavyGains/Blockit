@@ -1,0 +1,160 @@
+/* Board styles. The page carries data-style="..." on <html>; each style
+   recolors the base look in style.css. "classic" is style.css as is. */
+
+/* ---------- Classic (the original look; values repeated so a swatch
+   inside another style still shows classic colors) ---------- */
+
+[data-style="classic"] {
+  --bg: #1d2433;
+  --board: #121826;
+  --empty: #273047;
+  --text: #f2f4f8;
+  --muted: #9aa5bd;
+  --accent: #3b82f6;
+  --c0: #ef4444;
+  --c1: #f59e0b;
+  --c2: #22c55e;
+  --c3: #3b82f6;
+  --c4: #a855f7;
+  --c5: #ec4899;
+}
+
+/* ---------- Paper stickers (default) ---------- */
+
+[data-style="paper"] {
+  --bg: #efe6d0;
+  --board: #fbf6e8;
+  --empty: transparent;
+  --text: #3b3427;
+  --muted: #8a7f68;
+  --accent: #5f8fb8;
+  --c0: #d9776a;
+  --c1: #e0ad4f;
+  --c2: #8db57a;
+  --c3: #6f9fc6;
+  --c4: #a48bc4;
+  --c5: #d68cab;
+  --grid: rgba(95, 143, 184, 0.22);
+}
+
+/* Graph paper: a line at every cell edge, plus faint quarter lines. */
+[data-style="paper"] .board {
+  background-color: var(--board);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+    linear-gradient(rgba(95, 143, 184, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(95, 143, 184, 0.08) 1px, transparent 1px);
+  background-size: var(--cell) var(--cell), var(--cell) var(--cell),
+    calc(var(--cell) / 4) calc(var(--cell) / 4), calc(var(--cell) / 4) calc(var(--cell) / 4);
+  background-position: 4px 4px;
+  box-shadow: 0 2px 0 #d8ccb0, 0 6px 18px rgba(80, 60, 20, 0.15);
+}
+
+/* Stickers: rounded, white die-cut edge, a slight lift. */
+[data-style="paper"] .cell[data-c]::after {
+  border-radius: 7px;
+  box-shadow: 0 0 0 2px #fffdf6, 0 2px 0 2px rgba(80, 60, 20, 0.18);
+}
+
+[data-style="paper"] .cell.ghost::after {
+  background: color-mix(in srgb, var(--g) 30%, transparent);
+  box-shadow: inset 0 0 0 2px var(--g);
+  border-radius: 7px;
+}
+
+[data-style="paper"] .cell.glow::after,
+[data-style="paper"] .cell.glow.ghost::after {
+  filter: none;
+  box-shadow: 0 0 0 2px #fffdf6, 0 0 10px 3px rgba(224, 173, 79, 0.75);
+}
+
+[data-style="paper"] .cell.glow.ghost::after { background: var(--g); }
+
+/* Clear: the sticker peels and tears away. */
+[data-style="paper"] .cell.clearing::after {
+  background: var(--k, #fffdf6);
+  animation: tear 220ms ease-in forwards;
+}
+
+@keyframes tear {
+  to { transform: translate(18%, -35%) rotate(-18deg) scale(0.7); opacity: 0; }
+}
+
+[data-style="paper"] .pop { color: var(--text); text-shadow: 0 0 4px #fffdf6, 0 2px 0 #fffdf6; }
+[data-style="paper"] .pop small { color: #b9832a; }
+[data-style="paper"] .pop.solved { color: #b9832a; }
+[data-style="paper"] .pop.solved small { color: var(--text); }
+[data-style="paper"] .streak { color: #fff; background: #d9776a; }
+[data-style="paper"] .overlay { background: rgba(60, 50, 30, 0.45); }
+[data-style="paper"] .sheet { box-shadow: 0 10px 30px rgba(60, 50, 30, 0.3); }
+[data-style="paper"] .drag { filter: drop-shadow(0 6px 8px rgba(80, 60, 20, 0.3)); }
+
+/* ---------- Neon arcade ---------- */
+
+[data-style="neon"] {
+  --bg: #06060b;
+  --board: #0a0a14;
+  --empty: transparent;
+  --text: #eef3ff;
+  --muted: #7d88b8;
+  --accent: #2de2ff;
+  --c0: #ff3b6b;
+  --c1: #ffc21a;
+  --c2: #39ff88;
+  --c3: #2de2ff;
+  --c4: #b44dff;
+  --c5: #ff4df0;
+}
+
+[data-style="neon"] .board {
+  background-color: var(--board);
+  background-image:
+    linear-gradient(rgba(90, 110, 255, 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(90, 110, 255, 0.14) 1px, transparent 1px);
+  background-size: var(--cell) var(--cell);
+  background-position: 4px 4px;
+  box-shadow: 0 0 0 1px rgba(45, 226, 255, 0.35), 0 0 24px rgba(45, 226, 255, 0.15);
+}
+
+/* Glowing outlined blocks. */
+[data-style="neon"] .cell[data-c]::after {
+  inset: 4px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--k) 16%, transparent);
+  box-shadow: inset 0 0 0 2px var(--k), inset 0 0 8px var(--k), 0 0 10px var(--k);
+}
+
+[data-style="neon"] .cell.ghost::after {
+  inset: 4px;
+  border-radius: 3px;
+  background: transparent;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--g) 60%, transparent), 0 0 8px color-mix(in srgb, var(--g) 40%, transparent);
+}
+
+[data-style="neon"] .cell.glow::after,
+[data-style="neon"] .cell.glow.ghost::after {
+  filter: brightness(1.4);
+  box-shadow: inset 0 0 0 2px #fff, 0 0 14px 3px var(--g);
+}
+
+[data-style="neon"] .cell.glow.ghost::after { background: color-mix(in srgb, var(--g) 40%, transparent); }
+
+/* Clear: each block flashes white and stretches into a streak of light. */
+[data-style="neon"] .cell.clearing::after {
+  background: #fff;
+  box-shadow: 0 0 18px 4px var(--k, #fff);
+  animation: streak 220ms ease-out forwards;
+}
+
+@keyframes streak {
+  to { transform: scale(2.6, 0.12); opacity: 0; }
+}
+
+[data-style="neon"] .score { text-shadow: 0 0 12px rgba(45, 226, 255, 0.8); }
+[data-style="neon"] .logo { color: #ff4df0; text-shadow: 0 0 8px rgba(255, 77, 240, 0.7); }
+[data-style="neon"] .pop { text-shadow: 0 0 10px #2de2ff, 0 0 2px #2de2ff; }
+[data-style="neon"] .streak { background: #ff4df0; color: #06060b; box-shadow: 0 0 10px #ff4df0; }
+[data-style="neon"] .sheet { box-shadow: 0 0 0 1px rgba(45, 226, 255, 0.4), 0 0 30px rgba(45, 226, 255, 0.2); }
+[data-style="neon"] .primary-btn { color: #06060b; box-shadow: 0 0 14px rgba(45, 226, 255, 0.7); }
+[data-style="neon"] .drag { filter: drop-shadow(0 0 10px rgba(45, 226, 255, 0.4)); }
