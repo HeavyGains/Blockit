@@ -75,6 +75,8 @@ body {
   place-items: center;
   width: var(--t);
   height: var(--t);
+  padding-top: calc(var(--t) * 0.14); /* centers the capitals optically on the tile */
+  box-sizing: border-box;
   border-radius: 3px;
   color: #fff;
   background: var(--k);
