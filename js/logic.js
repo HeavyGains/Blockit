@@ -260,3 +260,53 @@ export function dealTrickTray(rng = Math.random, board, tries = TRICK_TRIES) {
   }
   return null;
 }
+
+// ---------- Gravity mode ----------
+// After a clear, every block drops straight down its column to fill the gaps.
+// That can fill new lines, which clear and drop again: a chain reaction.
+
+// Returns { board, falls }: the board after dropping, and falls[r][c] = how
+// many rows the block now at (r, c) fell (0 if it didn't move or is empty).
+export function applyGravity(board) {
+  const next = emptyBoard();
+  const falls = Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
+  for (let c = 0; c < SIZE; c++) {
+    let land = SIZE - 1; // next free row from the bottom
+    for (let r = SIZE - 1; r >= 0; r--) {
+      if (board[r][c] === null) continue;
+      next[land][c] = board[r][c];
+      falls[land][c] = land - r;
+      land--;
+    }
+  }
+  return { board: next, falls };
+}
+
+// Points for the 2nd, 3rd... clear of a chain (chain = 2, 3...). Like a normal
+// clear, times the chain step on top. The streak is kept but not raised.
+export function scoreChain(state, lines, chain, wiped = false) {
+  const count = lines.rows.length + lines.cols.length;
+  const clear = CLEAR_POINTS * clearedCellCount(lines) * count * Math.max(state.streak, 1) * chain;
+  const bonus = wiped ? WIPE_BONUS : 0;
+  const gained = clear + bonus;
+  return { ...state, score: state.score + gained, gained, clear, bonus, lines: count, chain };
+}
+
+// One whole Gravity turn without animation: place, then clear and drop until
+// nothing more clears. Returns the board and how many clears happened.
+export function playGravityMove(board, piece, row, col) {
+  let next = place(board, piece, row, col, 0);
+  let clears = 0;
+  for (;;) {
+    const lines = fullLines(next);
+    if (!lines.rows.length && !lines.cols.length) break;
+    clears++;
+    next = applyGravity(clearLines(next, lines)).board;
+  }
+  return { board: next, clears };
+}
+
+export const MODES = [
+  { id: 'classic', name: 'Classic', about: 'Fill rows and columns to clear them.' },
+  { id: 'gravity', name: 'Gravity', about: 'After a clear, blocks fall down. Set off chain reactions!' },
+];

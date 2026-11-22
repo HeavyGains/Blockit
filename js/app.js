@@ -3,10 +3,14 @@ import {
   isGameOver, dealTray, trayEmpty, fitsAnywhere, previewLines,
   newScore, scorePlacement, boardEmpty,
   dealTrickTray, TRICK_CHANCE, TRICK_BONUS,
-} from './logic.js?v=8';
+  applyGravity, scoreChain, MODES,
+} from './logic.js?v=9';
 
 const LIFT = 56;      // px the dragged piece floats above the finger, so it stays visible
 const CLEAR_MS = 220; // matches the pop animation in style.css
+const FALL_MS = 260;  // matches the fall animation in style.css
+const CHAIN_PAUSE = 120; // beat between a landing and the next clear
+const wait = ms => new Promise(res => setTimeout(res, ms));
 
 const boardEl = document.getElementById('board');
 const trayEl = document.getElementById('tray');
@@ -16,6 +20,7 @@ const scoreEl = document.getElementById('score');
 const streakEl = document.getElementById('streak');
 const bestEl = document.getElementById('best');
 const whoEl = document.getElementById('who');
+const modeTagEl = document.getElementById('modetag');
 
 let board = emptyBoard();
 let tray = dealTray();
@@ -36,13 +41,20 @@ const store = {
   },
 };
 let player = PLAYERS.includes(store.get('blockit.player')) ? store.get('blockit.player') : PLAYERS[0];
-const bests = store.get('blockit.best', {});
+// ---------- Mode (saved on this device) ----------
+
+let mode = MODES.some(m => m.id === store.get('blockit.mode')) ? store.get('blockit.mode') : 'classic';
+const gravity = () => mode === 'gravity';
+
+// Classic keeps the original 'blockit.best'; other modes get their own.
+const bestKey = () => (mode === 'classic' ? 'blockit.best' : `blockit.best.${mode}`);
+let bests = store.get(bestKey(), {});
 const best = () => bests[player] || 0;
 
 function saveBest() {
   if (score.score > best()) {
     bests[player] = score.score;
-    store.set('blockit.best', bests);
+    store.set(bestKey(), bests);
     newBest = true;
   }
 }
@@ -161,6 +173,7 @@ function drawScore() {
   streakEl.textContent = `x${score.streak}`;
   whoEl.textContent = player;
   bestEl.textContent = best().toLocaleString();
+  modeTagEl.textContent = `${MODES.find(m => m.id === mode).name} ▾`;
 }
 
 function draw() {
@@ -181,7 +194,8 @@ function showPop(piece, row, col, result) {
   el.textContent = `+${result.gained.toLocaleString()}`;
   const notes = [];
   if (result.lines > 1) notes.push(`${result.lines} lines`);
-  if (result.streak > 1) notes.push(`streak x${result.streak}`);
+  if (result.chain) notes.push(`chain x${result.chain}`);
+  else if (result.streak > 1) notes.push(`streak x${result.streak}`);
   if (result.bonus) notes.push('board clear!');
   if (notes.length) {
     const small = document.createElement('small');
@@ -209,7 +223,8 @@ function showSolved() {
 
 // About 1 set in TRICK_CHANCE is a trick set when the board allows one.
 function dealNext() {
-  const trick = Math.random() < TRICK_CHANCE ? dealTrickTray(Math.random, board) : null;
+  // Trick sets are solved with Classic rules, so they only come in Classic.
+  const trick = !gravity() && Math.random() < TRICK_CHANCE ? dealTrickTray(Math.random, board) : null;
   trickSet = !!trick;
   return trick || dealTray(Math.random, board);
 }
@@ -304,23 +319,73 @@ function placePiece(index, piece, row, col) {
   drawBoard();
   if (lines.rows.length || lines.cols.length) {
     busy = true;
-    board.forEach((line, r) => line.forEach((_, c) => {
-      if (lines.rows.includes(r) || lines.cols.includes(c)) cells[r * SIZE + c].classList.add('clearing');
-    }));
-    setTimeout(() => {
-      cells.forEach(el => el.classList.remove('clearing'));
-      board = clearLines(board, lines);
-      score = scorePlacement(score, piece.cells.length, lines, boardEmpty(board));
-      showPop(piece, row, col, score);
-      saveBest();
-      busy = false;
-      afterTurn();
-    }, CLEAR_MS);
+    resolveClears(piece, row, col, lines).then(() => { busy = false; afterTurn(); });
   } else {
     score = scorePlacement(score, piece.cells.length, lines);
     saveBest();
     afterTurn();
   }
+}
+
+// Flash the full lines, then empty them.
+async function clearWithFlash(lines) {
+  board.forEach((line, r) => line.forEach((_, c) => {
+    if (lines.rows.includes(r) || lines.cols.includes(c)) cells[r * SIZE + c].classList.add('clearing');
+  }));
+  await wait(CLEAR_MS);
+  cells.forEach(el => el.classList.remove('clearing'));
+  board = clearLines(board, lines);
+}
+
+// Clears from one placement. In Gravity, blocks then fall, and any lines they
+// fill clear too, again and again (a chain), each step worth more.
+async function resolveClears(piece, row, col, lines) {
+  await clearWithFlash(lines);
+  if (!gravity()) {
+    score = scorePlacement(score, piece.cells.length, lines, boardEmpty(board));
+    showPop(piece, row, col, score);
+    saveBest();
+    return;
+  }
+  await drop();
+  score = scorePlacement(score, piece.cells.length, lines, boardEmpty(board));
+  showPop(piece, row, col, score);
+  saveBest();
+  for (let chain = 2; ; chain++) {
+    const next = fullLines(board);
+    if (!next.rows.length && !next.cols.length) break;
+    await wait(CHAIN_PAUSE);
+    await clearWithFlash(next);
+    await drop();
+    score = scoreChain(score, next, chain, boardEmpty(board));
+    showChainPop(next, score);
+    saveBest();
+  }
+}
+
+// Let every block fall, with each one sliding down from where it was.
+async function drop() {
+  const { board: next, falls } = applyGravity(board);
+  board = next;
+  drawBoard();
+  let moved = false;
+  falls.forEach((line, r) => line.forEach((n, c) => {
+    if (!n) return;
+    moved = true;
+    const el = cells[r * SIZE + c];
+    el.style.setProperty('--fall', n);
+    el.classList.add('falling');
+  }));
+  if (!moved) return;
+  await wait(FALL_MS);
+  for (const el of cells) { el.classList.remove('falling'); el.style.removeProperty('--fall'); }
+}
+
+// Pop for a chain step, in the middle of the lines it cleared.
+function showChainPop(lines, result) {
+  const mid = list => (list.length ? list.reduce((a, b) => a + b, 0) / list.length : (SIZE - 1) / 2);
+  const fake = { cells: [[0, 0]] };
+  showPop(fake, mid(lines.rows), mid(lines.cols), result);
 }
 
 function afterTurn() {
@@ -340,7 +405,7 @@ function afterTurn() {
   }
 }
 
-document.getElementById('again').addEventListener('click', () => {
+function newGame() {
   board = emptyBoard();
   tray = dealTray();
   trickSet = false;
@@ -348,7 +413,46 @@ document.getElementById('again').addEventListener('click', () => {
   newBest = false;
   overEl.hidden = true;
   draw();
+}
+
+document.getElementById('again').addEventListener('click', newGame);
+
+// ---------- Mode menu ----------
+// Picking a mode starts a new game in it. Picking the one you're in just closes.
+
+const modesEl = document.getElementById('modes');
+const modeListEl = document.getElementById('modelist');
+
+function drawModes() {
+  modeListEl.replaceChildren(...MODES.map(m => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'mode-btn';
+    b.setAttribute('aria-pressed', String(m.id === mode));
+    const name = document.createElement('b');
+    name.textContent = m.name;
+    const about = document.createElement('span');
+    about.textContent = m.about;
+    b.append(name, about);
+    b.addEventListener('click', () => {
+      modesEl.hidden = true;
+      if (m.id === mode) return;
+      mode = m.id;
+      store.set('blockit.mode', mode);
+      bests = store.get(bestKey(), {});
+      newGame();
+    });
+    return b;
+  }));
+}
+
+modeTagEl.addEventListener('click', () => {
+  if (busy || drag) return;
+  drawModes();
+  modesEl.hidden = false;
 });
+document.getElementById('modes-close').addEventListener('click', () => { modesEl.hidden = true; });
+modesEl.addEventListener('click', e => { if (e.target === modesEl) modesEl.hidden = true; });
 
 applyStyle();
 draw();
