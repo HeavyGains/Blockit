@@ -1,6 +1,6 @@
 import {
   SIZE, emptyBoard, canPlace, place, fullLines, clearLines,
-  isGameOver, dealTray, trayEmpty, fitsAnywhere,
+  isGameOver, dealTray, trayEmpty, fitsAnywhere, previewLines,
   newScore, scorePlacement, boardEmpty,
 } from './logic.js';
 
@@ -155,6 +155,31 @@ function targetCell(x, y) {
 function moveDrag(x, y) {
   const w = dragEl.offsetWidth, h = dragEl.offsetHeight;
   dragEl.style.transform = `translate(${x - w / 2}px, ${y - h - LIFT}px)`;
+  const { row, col } = targetCell(x, y);
+  showGhost(drag.piece, row, col);
+}
+
+// ---------- Ghost preview ----------
+// Where the piece would land, and the rows/columns that would clear (glow).
+
+let ghostKey = '';
+
+function clearGhost() {
+  ghostKey = '';
+  for (const el of cells) el.classList.remove('ghost', 'glow');
+}
+
+function showGhost(piece, row, col) {
+  const key = `${row},${col}`;
+  if (key === ghostKey) return;
+  clearGhost();
+  const lines = previewLines(board, piece, row, col);
+  if (!lines) return;
+  ghostKey = key;
+  boardEl.style.setProperty('--g', `var(--c${piece.color})`);
+  for (const [r, c] of piece.cells) cells[(row + r) * SIZE + col + c].classList.add('ghost');
+  for (const r of lines.rows) for (let c = 0; c < SIZE; c++) cells[r * SIZE + c].classList.add('glow');
+  for (const c of lines.cols) for (let r = 0; r < SIZE; r++) cells[r * SIZE + c].classList.add('glow');
 }
 
 trayEl.addEventListener('pointerdown', e => {
@@ -181,6 +206,7 @@ function endDrag(e, drop) {
   const { index, piece, slot } = drag;
   const { row, col } = targetCell(e.clientX, e.clientY);
   drag = null;
+  clearGhost();
   dragEl.hidden = true;
   slot.classList.remove('lifted');
   if (drop && canPlace(board, piece, row, col)) placePiece(index, piece, row, col);
@@ -218,7 +244,7 @@ function placePiece(index, piece, row, col) {
 }
 
 function afterTurn() {
-  if (trayEmpty(tray)) tray = dealTray();
+  if (trayEmpty(tray)) tray = dealTray(Math.random, board);
   draw();
   if (isGameOver(board, tray)) {
     document.getElementById('final').textContent = score.score.toLocaleString();
