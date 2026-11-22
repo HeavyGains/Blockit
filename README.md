@@ -29,3 +29,7 @@ No build step: plain HTML, CSS and JS modules. GitHub Pages serves `main`.
 `sw.js` is a network-first service worker: every load asks Pages for fresh
 files (skipping the phone's 10-minute cache), so a merged change shows up on
 the next reload. It falls back to the saved copy when offline.
+
+Before each PR, run `npm run bump`: it raises the `?v=N` on the CSS/JS links
+and the imports between JS files, so the phone never runs a new page with old
+code (or the other way round) right after a merge.
