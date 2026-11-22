@@ -17,3 +17,7 @@ score is saved on the phone for each player (tap the name to switch).
     npm test        # rule tests
 
 No build step: plain HTML, CSS and JS modules. GitHub Pages serves `main`.
+
+`sw.js` is a network-first service worker: every load asks Pages for fresh
+files (skipping the phone's 10-minute cache), so a merged change shows up on
+the next reload. It falls back to the saved copy when offline.
