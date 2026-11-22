@@ -158,3 +158,222 @@
 [data-style="neon"] .sheet { box-shadow: 0 0 0 1px rgba(45, 226, 255, 0.4), 0 0 30px rgba(45, 226, 255, 0.2); }
 [data-style="neon"] .primary-btn { color: #06060b; box-shadow: 0 0 14px rgba(45, 226, 255, 0.7); }
 [data-style="neon"] .drag { filter: drop-shadow(0 0 10px rgba(45, 226, 255, 0.4)); }
+
+/* ---------- Candy jelly ---------- */
+
+[data-style="candy"] {
+  --bg: #ffe1ee;
+  --board: #ffc9de;
+  --empty: rgba(255, 255, 255, 0.45);
+  --text: #7a2d55;
+  --muted: #b0668c;
+  --accent: #ff5fa0;
+  --glow: rgba(255, 95, 160, 0.8);
+  --c0: #ff5f8f;
+  --c1: #ffad3d;
+  --c2: #5fd98a;
+  --c3: #5ab8ff;
+  --c4: #a983ff;
+  --c5: #ff7fd6;
+}
+
+[data-style="candy"] .board { border-radius: 18px; box-shadow: 0 6px 0 #f3a9c8, 0 10px 24px rgba(200, 60, 120, 0.2); }
+[data-style="candy"] .cell::after { border-radius: 10px; }
+
+/* Glossy jelly: a soft shine top-left, a darker bottom edge. */
+[data-style="candy"] .cell[data-c]::after {
+  border-radius: 10px;
+  background:
+    radial-gradient(ellipse 45% 30% at 32% 24%, rgba(255, 255, 255, 0.75), transparent 70%),
+    var(--k);
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.14), 0 2px 4px rgba(150, 40, 90, 0.25);
+}
+
+[data-style="candy"] .cell.clearing::after { background: var(--k, #fff); animation: bubble 220ms ease-out forwards; }
+@keyframes bubble { 60% { transform: scale(1.35); opacity: 0.8; } to { transform: scale(1.6); opacity: 0; } }
+[data-style="candy"] .pop { color: #fff; text-shadow: 0 2px 0 #e0478a, 0 0 8px #ff5fa0; }
+[data-style="candy"] .sheet { background: #fff0f6; }
+
+/* ---------- Woodshop ---------- */
+
+[data-style="wood"] {
+  --bg: #3a2a1c;
+  --board: #a8794b;
+  --empty: rgba(60, 35, 15, 0.22);
+  --text: #f6e7d2;
+  --muted: #c9aa86;
+  --accent: #d9932f;
+  --glow: rgba(255, 220, 150, 0.8);
+  --c0: #c4493a;
+  --c1: #dca23a;
+  --c2: #5d9a4c;
+  --c3: #3f77a6;
+  --c4: #8a5ea6;
+  --c5: #cf6f8c;
+}
+
+/* Wood grain: uneven stripes with a few darker rings. */
+[data-style="wood"] .board {
+  background-color: var(--board);
+  background-image:
+    repeating-linear-gradient(92deg, rgba(90, 50, 20, 0.18) 0 2px, transparent 2px 11px, rgba(255, 230, 190, 0.08) 11px 15px, transparent 15px 23px),
+    radial-gradient(ellipse 30% 8% at 70% 40%, rgba(90, 50, 20, 0.25), transparent 70%);
+  box-shadow: 0 0 0 3px #6e4a2a, 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+[data-style="wood"] .cell::after { border-radius: 3px; }
+
+/* Painted blocks with a bevel. */
+[data-style="wood"] .cell[data-c]::after {
+  border-radius: 3px;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.28), inset -2px -3px 0 rgba(0, 0, 0, 0.32), 0 2px 2px rgba(0, 0, 0, 0.35);
+}
+
+[data-style="wood"] .cell.clearing::after { background: var(--k, #fff); animation: clatter 220ms ease-in forwards; }
+@keyframes clatter { to { transform: translateY(70%) rotate(28deg); opacity: 0; } }
+[data-style="wood"] .sheet { background: #4a3524; }
+
+/* ---------- Chalkboard ---------- */
+
+[data-style="chalk"] {
+  --bg: #1f2e27;
+  --board: #2d4638;
+  --empty: rgba(255, 255, 255, 0.04);
+  --text: #f1f1e8;
+  --muted: #a9bdb0;
+  --accent: #f0d98a;
+  --c0: #ff9b9b;
+  --c1: #ffe08a;
+  --c2: #a9f0a1;
+  --c3: #9bd4ff;
+  --c4: #d7b2ff;
+  --c5: #ffc4e1;
+}
+
+/* Slate with a few smudges, and a wooden frame. */
+[data-style="chalk"] .board {
+  background-color: var(--board);
+  background-image:
+    radial-gradient(ellipse 40% 25% at 25% 30%, rgba(255, 255, 255, 0.06), transparent 70%),
+    radial-gradient(ellipse 35% 20% at 75% 75%, rgba(255, 255, 255, 0.05), transparent 70%);
+  box-shadow: 0 0 0 5px #7a5532, 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+/* Chalk-drawn: wobbly outline, light chalk fill. */
+[data-style="chalk"] .cell[data-c]::after {
+  inset: 4px;
+  background: color-mix(in srgb, var(--k) 22%, transparent);
+  border: 2.5px solid var(--k);
+  border-radius: 4px 9px 5px 8px / 8px 4px 9px 5px;
+  box-shadow: 0 0 2px var(--k);
+}
+
+[data-style="chalk"] .cell.ghost::after { border-radius: 4px 9px 5px 8px / 8px 4px 9px 5px; }
+[data-style="chalk"] .cell.clearing::after { background: #fff; border-color: #fff; animation: dust 220ms ease-out forwards; }
+@keyframes dust { to { transform: scale(1.7); filter: blur(6px); opacity: 0; } }
+
+/* ---------- Pixel ---------- */
+
+[data-style="pixel"] {
+  --bg: #0f1438;
+  --board: #0a0e2a;
+  --empty: #1a2152;
+  --text: #ffffff;
+  --muted: #8f9ad8;
+  --accent: #3c7cfc;
+  --c0: #e83b3b;
+  --c1: #f8b800;
+  --c2: #3cbc3c;
+  --c3: #3c9cfc;
+  --c4: #b83cfc;
+  --c5: #fc74b4;
+  font-family: ui-monospace, "Courier New", monospace;
+}
+
+[data-style="pixel"] .board { border-radius: 0; box-shadow: 0 0 0 4px #3c7cfc, 0 0 0 8px #0a0e2a; }
+[data-style="pixel"] .cell::after { border-radius: 0; }
+
+/* Chunky 8-bit blocks: hard light and dark edges. */
+[data-style="pixel"] .cell[data-c]::after {
+  border-radius: 0;
+  box-shadow: inset 4px 4px 0 rgba(255, 255, 255, 0.35), inset -4px -4px 0 rgba(0, 0, 0, 0.4);
+}
+
+[data-style="pixel"] .cell.ghost::after { border-radius: 0; }
+[data-style="pixel"] .cell.clearing::after { background: var(--k, #fff); animation: scatter 220ms steps(4) forwards; }
+@keyframes scatter { to { transform: scale(0.25) rotate(90deg); opacity: 0; } }
+[data-style="pixel"] .sheet, [data-style="pixel"] .primary-btn, [data-style="pixel"] .swatch { border-radius: 0; }
+[data-style="pixel"] .streak { border-radius: 0; }
+
+/* ---------- Garden ---------- */
+
+[data-style="garden"] {
+  --bg: #47652d;
+  --board: #5a3a24;
+  --empty: #6e4a30;
+  --text: #f4f8e8;
+  --muted: #c5d6a8;
+  --accent: #f0a23a;
+  --glow: rgba(255, 240, 150, 0.85);
+  --c0: #ff7eb6;
+  --c1: #ffd54f;
+  --c2: #4caf50;
+  --c3: #8bc34a;
+  --c4: #ba68c8;
+  --c5: #ff8a65;
+}
+
+/* Soil with specks; each empty cell is a little bed. */
+[data-style="garden"] .board {
+  background-color: var(--board);
+  background-image: radial-gradient(rgba(0, 0, 0, 0.25) 1px, transparent 1.5px);
+  background-size: 7px 7px;
+  box-shadow: 0 0 0 4px #3c5a24, 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+[data-style="garden"] .cell::after { border-radius: 8px; box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.3); }
+
+/* Leaf-shaped tiles with a vein. */
+[data-style="garden"] .cell[data-c]::after {
+  border-radius: 70% 10% 70% 10%;
+  background: linear-gradient(135deg, transparent 47%, rgba(255, 255, 255, 0.35) 48% 52%, transparent 53%), var(--k);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.18);
+}
+
+[data-style="garden"] .cell.clearing::after { background: #ffd1e8; border-radius: 50%; animation: bloom 220ms ease-out forwards; }
+@keyframes bloom { 50% { transform: scale(1.3) rotate(45deg); background: #ffe680; } to { transform: scale(1.7) rotate(90deg); opacity: 0; } }
+
+/* ---------- High contrast ---------- */
+
+[data-style="contrast"] {
+  --bg: #ffffff;
+  --board: #ffffff;
+  --empty: #ececec;
+  --text: #000000;
+  --muted: #333333;
+  --accent: #0040e0;
+  --glow: rgba(0, 0, 0, 0.9);
+  --c0: #d00000;
+  --c1: #f0a000;
+  --c2: #008a00;
+  --c3: #0040e0;
+  --c4: #7a00cc;
+  --c5: #222222;
+}
+
+[data-style="contrast"] .board { box-shadow: 0 0 0 3px #000; }
+
+/* Bold color plus a pattern per color, so colors never need to be told apart. */
+[data-style="contrast"] .cell[data-c]::after { box-shadow: inset 0 0 0 2px #000; border-radius: 3px; }
+[data-style="contrast"] .cell[data-c="1"]::after { background: repeating-linear-gradient(45deg, var(--k) 0 4px, #000 4px 6px); }
+[data-style="contrast"] .cell[data-c="2"]::after { background: radial-gradient(#fff 22%, transparent 24%) 0 0 / 9px 9px, var(--k); }
+[data-style="contrast"] .cell[data-c="3"]::after { background: repeating-linear-gradient(0deg, var(--k) 0 4px, #fff 4px 6px); }
+[data-style="contrast"] .cell[data-c="4"]::after { background: repeating-linear-gradient(90deg, var(--k) 0 4px, #fff 4px 6px); }
+[data-style="contrast"] .cell[data-c="5"]::after { background: conic-gradient(var(--k) 25%, #fff 0 50%, var(--k) 0 75%, #fff 0) 0 0 / 10px 10px; }
+[data-style="contrast"] .cell.clearing::after { background: #000; animation: fadeout 220ms linear forwards; }
+@keyframes fadeout { to { opacity: 0; } }
+[data-style="contrast"] .pop { color: #000; text-shadow: 0 0 3px #fff, 0 0 6px #fff; }
+[data-style="contrast"] .pop small, [data-style="contrast"] .pop.solved { color: #0040e0; }
+[data-style="contrast"] .streak { background: #000; color: #fff; }
+[data-style="contrast"] .sheet { box-shadow: 0 0 0 3px #000; }
+[data-style="contrast"] .overlay { background: rgba(0, 0, 0, 0.55); }

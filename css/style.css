@@ -197,13 +197,13 @@ main {
 /* Rows and columns that would clear if dropped here. */
 .cell.glow::after {
   filter: brightness(1.35);
-  box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 8px 2px var(--glow, rgba(255, 255, 255, 0.55));
   z-index: 1;
 }
 
 .cell.glow.ghost::after {
   background: var(--g);
-  box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 8px 2px var(--glow, rgba(255, 255, 255, 0.55));
 }
 
 .cell.clearing::after {
@@ -285,37 +285,43 @@ main {
 
 /* ---------- Style picker ---------- */
 
-.swatches { display: grid; gap: 10px; margin: 0 0 16px; }
+.swatches { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 12px; }
 
 .swatch {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   font: inherit;
   font-weight: 800;
-  font-size: 17px;
+  font-size: 14px;
+  line-height: 1.15;
   color: var(--text);
   background: none;
   border: 2px solid transparent;
   border-radius: 12px;
-  padding: 6px;
+  padding: 5px;
   text-align: left;
 }
 
 .swatch[aria-pressed="true"] { border-color: var(--accent); }
 
+#styles .sheet { padding: 20px 12px 12px; }
+
+.swatch { min-width: 0; flex-direction: column; gap: 4px; text-align: center; }
+
 /* A tiny board in that style: its own background and three of its blocks. */
 .swatch .mini {
   display: grid;
-  grid-template-columns: repeat(3, 18px);
-  gap: 3px;
-  padding: 6px;
+  grid-template-columns: repeat(3, 12px);
+  gap: 2px;
+  padding: 4px;
+  flex: none;
   border-radius: 8px;
 }
 
 .swatch .mini { background: var(--board); box-shadow: 0 0 0 1px rgba(128, 128, 128, 0.35); }
 
-.swatch .mini i { height: 18px; border-radius: 4px; }
+.swatch .mini i { height: 12px; border-radius: 3px; }
 .swatch .mini i:nth-child(1) { background: var(--c0); }
 .swatch .mini i:nth-child(2) { background: var(--c3); }
 .swatch .mini i:nth-child(3) { background: var(--c2); }
