@@ -12,8 +12,8 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-  <link rel="stylesheet" href="css/style.css?v=9">
-  <link rel="stylesheet" href="css/styles.css?v=9">
+  <link rel="stylesheet" href="css/style.css?v=10">
+  <link rel="stylesheet" href="css/styles.css?v=10">
   <script>
     // Set the saved style before the page draws, so it doesn't flash.
     try {
@@ -67,14 +67,15 @@
 
   <div id="modes" class="overlay" hidden>
     <div class="sheet">
-      <h2>Game mode</h2>
+      <h2>Game</h2>
       <div id="modelist" class="modelist"></div>
-      <p class="hint small">Switching starts a new game. Each mode keeps its own best.</p>
+      <p class="hint small">Each mode keeps its own game and its own best.</p>
+      <button id="newgame" class="primary-btn" type="button">New game</button>
       <button id="modes-close" class="text-btn" type="button">Close</button>
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=9"></script>
+  <script type="module" src="js/app.js?v=10"></script>
   <script>
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' });
   </script>

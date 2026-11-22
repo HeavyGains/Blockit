@@ -20,7 +20,9 @@ Styles: tap the palette to pick Paper stickers (default), Neon arcade, Neon
 sunset, Neon ice, Neon toxic, Candy jelly, Woodshop, Chalkboard, Pixel, Garden,
 Camo or Classic. Each player's choice is saved. Styles live in `css/styles.css`.
 
-Modes: tap the mode name under the score to switch (it starts a new game).
+Modes: tap the mode name under the score to switch modes or start a New game.
+Each mode's game in progress is saved on the phone (`blockit.game.<mode>`), so
+switching away and back, or closing the page, picks up where you left off.
 Classic is the default. In Gravity, after a clear every block falls straight
 down its column; if that fills new lines they clear too, and each step of the
 chain scores x2, x3 and so on. Each mode keeps its own best (Classic in
