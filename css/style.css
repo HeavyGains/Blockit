@@ -136,19 +136,22 @@ main {
   font-size: 26px;
   color: #fff;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
-  animation: rise 900ms ease-out forwards;
+  animation: rise 1800ms ease-out forwards;
 }
 
 .pop small { display: block; font-size: 15px; color: var(--c1); }
 
-.pop.solved { font-size: 30px; color: var(--c1); animation-duration: 1400ms; }
+.pop.solved { font-size: 30px; color: var(--c1); animation-duration: 2500ms; }
 
 .pop.solved small { color: #fff; }
 
+/* Pops in, holds in place for most of its time, then drifts up and fades. */
 @keyframes rise {
   0% { opacity: 0; transform: translate(-50%, -30%) scale(0.7); }
-  15% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
-  100% { opacity: 0; transform: translate(-50%, -140%) scale(1); }
+  8% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  14% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  70% { opacity: 1; transform: translate(-50%, -70%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -150%) scale(1); }
 }
 
 .cell {
