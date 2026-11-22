@@ -29,6 +29,13 @@ chain scores x2, x3 and so on. Each mode keeps its own best (Classic in
 `blockit.best`, Gravity in `blockit.best.gravity`). Tricky sets only come in
 Classic.
 
+Special blocks: a switch in the Game sheet (tap the mode name). With it on,
+about 1 piece in 4 carries one special cell, in either mode. Bomb: when its line
+clears it also clears the 3x3 around it (and sets off other bombs there); each
+extra cell scores like a cleared cell. Stone: a clear only cracks it, a second
+clear breaks it. Star: +50 when cleared. Each mode with or without specials
+keeps its own saved game and best (`blockit.game.classic-special`, etc.).
+
 ## Run it
 
     npm run dev     # http://localhost:5173
