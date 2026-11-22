@@ -107,13 +107,30 @@ export function isGameOver(board, tray) {
   return left.length > 0 && !left.some(p => fitsAnywhere(board, p));
 }
 
-// A fresh set of TRAY_SIZE random pieces, each with a random color.
-// rng returns a number in [0, 1) like Math.random.
-export function dealTray(rng = Math.random) {
+export const MAX_REROLLS = 50;
+
+function randomTray(rng) {
   return Array.from({ length: TRAY_SIZE }, () => ({
     ...PIECES[Math.floor(rng() * PIECES.length)],
     color: Math.floor(rng() * COLORS),
   }));
+}
+
+// A fresh set of TRAY_SIZE random pieces, each with a random color.
+// rng returns a number in [0, 1) like Math.random.
+// Fairness: with a board, a set where no piece fits is rerolled (up to
+// MAX_REROLLS times), so a fresh set only ends the game when the board is packed.
+export function dealTray(rng = Math.random, board = null) {
+  let tray = randomTray(rng);
+  for (let i = 0; board && i < MAX_REROLLS && isGameOver(board, tray); i++) tray = randomTray(rng);
+  return tray;
+}
+
+// For the ghost preview: the rows and columns that would clear if the piece
+// landed at (row, col), or null if it can't go there.
+export function previewLines(board, piece, row, col) {
+  if (!canPlace(board, piece, row, col)) return null;
+  return fullLines(place(board, piece, row, col, 0));
 }
 
 export function trayEmpty(tray) {

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   SIZE, PIECES, emptyBoard, canPlace, place, fullLines, clearLines,
-  fitsAnywhere, isGameOver, dealTray, trayEmpty, pieceSize,
+  fitsAnywhere, isGameOver, dealTray, trayEmpty, pieceSize, previewLines,
 } from '../js/logic.js';
 
 const piece = id => PIECES.find(p => p.id === id);
@@ -121,4 +121,33 @@ test('deal gives 3 pieces with colors, and the tray empties as they are placed',
   assert.ok(!trayEmpty(tray));
   assert.ok(!trayEmpty([null, tray[1], null]));
   assert.ok(trayEmpty([null, null, null]));
+});
+
+test('previewLines: null where the piece cannot go, else the lines it would clear', () => {
+  const b = fillRow(emptyBoard(), 7, [3, 4]);
+  assert.equal(previewLines(b, piece('bar2h'), 7, 2), null); // overlaps
+  assert.deepEqual(previewLines(b, piece('bar2h'), 7, 3), { rows: [7], cols: [] });
+  assert.deepEqual(previewLines(b, piece('bar2h'), 0, 0), { rows: [], cols: [] });
+  assert.equal(b[7][3], null, 'board is not changed');
+});
+
+test('a fresh set is rerolled until at least one piece fits', () => {
+  // Checkerboard: only the 1-cell dot fits anywhere.
+  const b = emptyBoard().map((line, r) => line.map((_, c) => ((r + c) % 2 ? 0 : null)));
+  const dot = PIECES.findIndex(p => p.id === 'dot');
+  const sq2 = PIECES.findIndex(p => p.id === 'sq2');
+  // First set: three 2x2 squares (no fit). Second set: has a dot.
+  const picks = [sq2, sq2, sq2, sq2, dot, sq2];
+  let i = 0;
+  const rng = () => { const k = Math.floor(i / 2); const isColor = i % 2; i++; return isColor ? 0 : (picks[k] + 0.5) / PIECES.length; };
+  const tray = dealTray(rng, b);
+  assert.ok(!isGameOver(b, tray));
+  assert.ok(tray.some(p => p.id === 'dot'));
+});
+
+test('on a packed board the deal gives up after MAX_REROLLS and returns a set', () => {
+  const full = emptyBoard().map(line => line.map(() => 0));
+  const tray = dealTray(Math.random, full);
+  assert.equal(tray.length, 3);
+  assert.ok(isGameOver(full, tray));
 });
