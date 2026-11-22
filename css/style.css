@@ -117,6 +117,21 @@ body {
 
 .streak[hidden] { display: none; }
 
+/* Current mode under the score; tap to change it. */
+.modetag {
+  display: block;
+  margin: -2px auto 0;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  padding: 2px 8px 4px;
+}
+
 .best {
   justify-self: end;
   display: flex;
@@ -237,6 +252,16 @@ main {
 .cell.clearing::after {
   background: #fff;
   animation: pop 220ms ease-out forwards;
+}
+
+/* Gravity: a block slides down from where it was (--fall rows up). */
+.cell.falling::after {
+  animation: fall 260ms cubic-bezier(0.5, 0, 0.9, 0.6);
+  z-index: 2;
+}
+
+@keyframes fall {
+  from { transform: translateY(calc(var(--fall) * (-100% - 4px))); }
 }
 
 @keyframes pop {
@@ -378,3 +403,25 @@ main {
   padding: 14px 28px;
   width: 100%;
 }
+
+/* ---------- Mode menu ---------- */
+
+.modelist { display: grid; gap: 8px; margin: 8px 0 10px; }
+
+.mode-btn {
+  display: grid;
+  gap: 2px;
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  background: none;
+  border: 2px solid rgba(128, 128, 128, 0.35);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.mode-btn b { font-size: 18px; font-weight: 900; }
+.mode-btn span { font-size: 14px; color: var(--muted); }
+.mode-btn[aria-pressed="true"] { border-color: var(--accent); }
+
+.hint.small { font-size: 13px; margin: 0 0 4px; }

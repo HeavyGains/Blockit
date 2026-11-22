@@ -20,6 +20,13 @@ Styles: tap the palette to pick Paper stickers (default), Neon arcade, Neon
 sunset, Neon ice, Neon toxic, Candy jelly, Woodshop, Chalkboard, Pixel, Garden,
 Camo or Classic. Each player's choice is saved. Styles live in `css/styles.css`.
 
+Modes: tap the mode name under the score to switch (it starts a new game).
+Classic is the default. In Gravity, after a clear every block falls straight
+down its column; if that fills new lines they clear too, and each step of the
+chain scores x2, x3 and so on. Each mode keeps its own best (Classic in
+`blockit.best`, Gravity in `blockit.best.gravity`). Tricky sets only come in
+Classic.
+
 ## Run it
 
     npm run dev     # http://localhost:5173
