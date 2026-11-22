@@ -9,8 +9,11 @@
   <meta name="apple-mobile-web-app-title" content="BLOCKIT">
   <meta name="mobile-web-app-capable" content="yes">
   <title>BLOCKIT</title>
-  <link rel="stylesheet" href="css/style.css?v=7">
-  <link rel="stylesheet" href="css/styles.css?v=7">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="stylesheet" href="css/style.css?v=8">
+  <link rel="stylesheet" href="css/styles.css?v=8">
   <script>
     // Set the saved style before the page draws, so it doesn't flash.
     try {
@@ -61,7 +64,7 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=7"></script>
+  <script type="module" src="js/app.js?v=8"></script>
   <script>
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' });
   </script>
