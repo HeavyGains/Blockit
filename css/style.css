@@ -46,6 +46,18 @@ body {
   padding: 10px 16px 4px;
 }
 
+.brand { display: flex; align-items: center; gap: 6px; }
+
+.icon-btn {
+  font: inherit;
+  font-size: 20px;
+  line-height: 1;
+  background: none;
+  border: 0;
+  padding: 6px;
+  margin: -6px 0;
+}
+
 .logo {
   margin: 0;
   font-size: 15px;
@@ -167,13 +179,14 @@ main {
   background: var(--empty);
 }
 
-.cell[data-c]::after { box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.25); }
-.cell[data-c="0"]::after { background: var(--c0); }
-.cell[data-c="1"]::after { background: var(--c1); }
-.cell[data-c="2"]::after { background: var(--c2); }
-.cell[data-c="3"]::after { background: var(--c3); }
-.cell[data-c="4"]::after { background: var(--c4); }
-.cell[data-c="5"]::after { background: var(--c5); }
+/* --k is the block's color; each style in styles.css decides how to draw it. */
+.cell[data-c="0"] { --k: var(--c0); }
+.cell[data-c="1"] { --k: var(--c1); }
+.cell[data-c="2"] { --k: var(--c2); }
+.cell[data-c="3"] { --k: var(--c3); }
+.cell[data-c="4"] { --k: var(--c4); }
+.cell[data-c="5"] { --k: var(--c5); }
+.cell[data-c]::after { background: var(--k); box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.25); }
 
 /* Ghost preview: where the dragged piece would land (--g is its color). */
 .cell.ghost::after {
@@ -269,6 +282,52 @@ main {
 .final { margin: 0; font-size: 40px; font-weight: 900; font-variant-numeric: tabular-nums; }
 
 .newbest { margin: 0 0 8px; color: var(--c1); font-weight: 800; }
+
+/* ---------- Style picker ---------- */
+
+.swatches { display: grid; gap: 10px; margin: 0 0 16px; }
+
+.swatch {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font: inherit;
+  font-weight: 800;
+  font-size: 17px;
+  color: var(--text);
+  background: none;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  padding: 6px;
+  text-align: left;
+}
+
+.swatch[aria-pressed="true"] { border-color: var(--accent); }
+
+/* A tiny board in that style: its own background and three of its blocks. */
+.swatch .mini {
+  display: grid;
+  grid-template-columns: repeat(3, 18px);
+  gap: 3px;
+  padding: 6px;
+  border-radius: 8px;
+}
+
+.swatch .mini { background: var(--board); box-shadow: 0 0 0 1px rgba(128, 128, 128, 0.35); }
+
+.swatch .mini i { height: 18px; border-radius: 4px; }
+.swatch .mini i:nth-child(1) { background: var(--c0); }
+.swatch .mini i:nth-child(2) { background: var(--c3); }
+.swatch .mini i:nth-child(3) { background: var(--c2); }
+
+.text-btn {
+  font: inherit;
+  font-weight: 700;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  padding: 8px 16px;
+}
 
 .newbest[hidden] { display: none; }
 

@@ -16,6 +16,9 @@ piece fits nowhere when it arrives, but there is a hidden order that uses line
 clears to make room, and at most a quarter of first moves lead to it. Placing
 all three earns "Solved!" +100.
 
+Styles: tap the palette to switch between Paper stickers (default), Neon arcade
+and Classic. Each player's choice is saved. Styles live in `css/styles.css`.
+
 ## Run it
 
     npm run dev     # http://localhost:5173

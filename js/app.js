@@ -47,9 +47,56 @@ function saveBest() {
   }
 }
 
+// ---------- Styles (saved per player) ----------
+
+const STYLES = [
+  { id: 'paper', name: 'Paper stickers' },
+  { id: 'neon', name: 'Neon arcade' },
+  { id: 'classic', name: 'Classic' },
+];
+const styles = store.get('blockit.style', {});
+const stylesEl = document.getElementById('styles');
+const swatchesEl = document.getElementById('swatches');
+
+function currentStyle() {
+  return STYLES.some(s => s.id === styles[player]) ? styles[player] : STYLES[0].id;
+}
+
+function applyStyle() {
+  const id = currentStyle();
+  document.documentElement.dataset.style = id;
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  document.querySelector('meta[name="theme-color"]').content = bg;
+  for (const b of swatchesEl.children) b.setAttribute('aria-pressed', String(b.dataset.id === id));
+}
+
+swatchesEl.replaceChildren(...STYLES.map(s => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'swatch';
+  b.dataset.id = s.id;
+  const mini = document.createElement('span');
+  mini.className = 'mini';
+  mini.dataset.style = s.id; // the mini board takes that style's colors
+  mini.append(document.createElement('i'), document.createElement('i'), document.createElement('i'));
+  b.append(mini, s.name);
+  b.addEventListener('click', () => {
+    styles[player] = s.id;
+    store.set('blockit.style', styles);
+    applyStyle();
+    stylesEl.hidden = true;
+  });
+  return b;
+}));
+
+document.getElementById('palette').addEventListener('click', () => { stylesEl.hidden = false; });
+document.getElementById('styles-close').addEventListener('click', () => { stylesEl.hidden = true; });
+stylesEl.addEventListener('click', e => { if (e.target === stylesEl) stylesEl.hidden = true; });
+
 document.getElementById('player').addEventListener('click', () => {
   player = PLAYERS[(PLAYERS.indexOf(player) + 1) % PLAYERS.length];
   store.set('blockit.player', player);
+  applyStyle();
   newBest = false;
   saveBest();
   drawScore();
@@ -294,4 +341,5 @@ document.getElementById('again').addEventListener('click', () => {
   draw();
 });
 
+applyStyle();
 draw();
