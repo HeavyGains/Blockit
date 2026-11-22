@@ -16,8 +16,9 @@ piece fits nowhere when it arrives, but there is a hidden order that uses line
 clears to make room, and at most a quarter of first moves lead to it. Placing
 all three earns "Solved!" +100.
 
-Styles: tap the palette to pick Paper stickers (default), Neon arcade, Candy
-jelly, Woodshop, Chalkboard, Pixel, Garden, High contrast or Classic. Each player's choice is saved. Styles live in `css/styles.css`.
+Styles: tap the palette to pick Paper stickers (default), Neon arcade, Neon
+sunset, Neon ice, Neon toxic, Candy jelly, Woodshop, Chalkboard, Pixel, Garden,
+Camo or Classic. Each player's choice is saved. Styles live in `css/styles.css`.
 
 ## Run it
 
