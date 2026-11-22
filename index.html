@@ -9,8 +9,8 @@
   <meta name="apple-mobile-web-app-title" content="BLOCKIT">
   <meta name="mobile-web-app-capable" content="yes">
   <title>BLOCKIT</title>
-  <link rel="stylesheet" href="css/style.css?v=6">
-  <link rel="stylesheet" href="css/styles.css?v=6">
+  <link rel="stylesheet" href="css/style.css?v=7">
+  <link rel="stylesheet" href="css/styles.css?v=7">
   <script>
     // Set the saved style before the page draws, so it doesn't flash.
     try {
@@ -23,7 +23,7 @@
 <body>
   <header class="top">
     <div class="brand">
-      <h1 class="logo">BLOCKIT</h1>
+      <h1 class="logo" aria-label="Blockit"><i>B</i><i>L</i><i>O</i><i>C</i><i>K</i><i>I</i><i>T</i></h1>
       <button id="palette" class="icon-btn" type="button" aria-label="Change style">🎨</button>
     </div>
     <div class="scorebox">
@@ -61,7 +61,7 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=6"></script>
+  <script type="module" src="js/app.js?v=7"></script>
   <script>
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' });
   </script>
