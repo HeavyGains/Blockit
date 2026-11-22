@@ -1,6 +1,7 @@
 import {
   SIZE, emptyBoard, canPlace, place, fullLines, clearLines,
   isGameOver, dealTray, trayEmpty, fitsAnywhere,
+  newScore, scorePlacement, boardEmpty,
 } from './logic.js';
 
 const LIFT = 56;      // px the dragged piece floats above the finger, so it stays visible
@@ -10,10 +11,47 @@ const boardEl = document.getElementById('board');
 const trayEl = document.getElementById('tray');
 const dragEl = document.getElementById('drag');
 const overEl = document.getElementById('over');
+const scoreEl = document.getElementById('score');
+const streakEl = document.getElementById('streak');
+const bestEl = document.getElementById('best');
+const whoEl = document.getElementById('who');
 
 let board = emptyBoard();
 let tray = dealTray();
 let busy = false; // true while lines are clearing
+let score = newScore();
+let newBest = false; // beat the saved best during this game
+
+// ---------- Players and best scores (saved on this device) ----------
+
+const PLAYERS = ['Jason', 'Amy'];
+const store = {
+  get(key, fallback) {
+    try { const v = localStorage.getItem(key); return v === null ? fallback : JSON.parse(v); } catch { return fallback; }
+  },
+  set(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* private mode: just don't save */ }
+  },
+};
+let player = PLAYERS.includes(store.get('blockit.player')) ? store.get('blockit.player') : PLAYERS[0];
+const bests = store.get('blockit.best', {});
+const best = () => bests[player] || 0;
+
+function saveBest() {
+  if (score.score > best()) {
+    bests[player] = score.score;
+    store.set('blockit.best', bests);
+    newBest = true;
+  }
+}
+
+document.getElementById('player').addEventListener('click', () => {
+  player = PLAYERS[(PLAYERS.indexOf(player) + 1) % PLAYERS.length];
+  store.set('blockit.player', player);
+  newBest = false;
+  saveBest();
+  drawScore();
+});
 
 // ---------- Drawing ----------
 
@@ -59,9 +97,41 @@ function drawTray() {
   }));
 }
 
+function drawScore() {
+  scoreEl.textContent = score.score.toLocaleString();
+  streakEl.hidden = score.streak < 2;
+  streakEl.textContent = `x${score.streak}`;
+  whoEl.textContent = player;
+  bestEl.textContent = best().toLocaleString();
+}
+
 function draw() {
   drawBoard();
   drawTray();
+  drawScore();
+}
+
+// Floating "+points" at the middle of the placed piece, which is where the clear happened.
+function showPop(piece, row, col, result) {
+  const n = piece.cells.length;
+  const r = row + piece.cells.reduce((a, [y]) => a + y, 0) / n + 0.5;
+  const c = col + piece.cells.reduce((a, [, x]) => a + x, 0) / n + 0.5;
+  const el = document.createElement('div');
+  el.className = 'pop';
+  el.style.top = `${Math.min(Math.max(r / SIZE, 0.12), 0.88) * 100}%`;
+  el.style.left = `${Math.min(Math.max(c / SIZE, 0.2), 0.8) * 100}%`;
+  el.textContent = `+${result.gained.toLocaleString()}`;
+  const notes = [];
+  if (result.lines > 1) notes.push(`${result.lines} lines`);
+  if (result.streak > 1) notes.push(`streak x${result.streak}`);
+  if (result.bonus) notes.push('board clear!');
+  if (notes.length) {
+    const small = document.createElement('small');
+    small.textContent = notes.join(' · ');
+    el.appendChild(small);
+  }
+  boardEl.appendChild(el);
+  el.addEventListener('animationend', () => el.remove());
 }
 
 // ---------- Dragging ----------
@@ -134,10 +204,15 @@ function placePiece(index, piece, row, col) {
     setTimeout(() => {
       cells.forEach(el => el.classList.remove('clearing'));
       board = clearLines(board, lines);
+      score = scorePlacement(score, piece.cells.length, lines, boardEmpty(board));
+      showPop(piece, row, col, score);
+      saveBest();
       busy = false;
       afterTurn();
     }, CLEAR_MS);
   } else {
+    score = scorePlacement(score, piece.cells.length, lines);
+    saveBest();
     afterTurn();
   }
 }
@@ -145,12 +220,18 @@ function placePiece(index, piece, row, col) {
 function afterTurn() {
   if (trayEmpty(tray)) tray = dealTray();
   draw();
-  if (isGameOver(board, tray)) overEl.hidden = false;
+  if (isGameOver(board, tray)) {
+    document.getElementById('final').textContent = score.score.toLocaleString();
+    document.getElementById('newbest').hidden = !newBest;
+    overEl.hidden = false;
+  }
 }
 
 document.getElementById('again').addEventListener('click', () => {
   board = emptyBoard();
   tray = dealTray();
+  score = newScore();
+  newBest = false;
   overEl.hidden = true;
   draw();
 });
