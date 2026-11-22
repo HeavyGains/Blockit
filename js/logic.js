@@ -2,7 +2,7 @@
 // A board is SIZE rows of SIZE cells; a cell is null (empty) or a color index.
 // A piece is { id, cells: [[row, col], ...] } with its top-left at 0,0. No rotation.
 
-export const SIZE = 9;
+export const SIZE = 8;
 export const TRAY_SIZE = 3;
 export const COLORS = 6; // color indexes 0..COLORS-1, picked in the CSS
 
@@ -118,4 +118,50 @@ export function dealTray(rng = Math.random) {
 
 export function trayEmpty(tray) {
   return tray.every(p => p === null);
+}
+
+// ---------- Scoring ----------
+// Points per the design doc:
+//   1 per cell placed.
+//   10 per cleared cell, times the number of lines cleared at once (multi-clear),
+//   times the streak (clears on consecutive placements: x1, x2, x3...).
+//   +500 when a clear leaves the board completely empty.
+// The streak survives up to 2 placements with no clear; the 3rd resets it.
+
+export const CELL_POINTS = 1;
+export const CLEAR_POINTS = 10;
+export const WIPE_BONUS = 500;
+export const STREAK_GRACE = 3; // placements with no clear that end a streak
+
+export function newScore() {
+  return { score: 0, streak: 0, miss: 0 };
+}
+
+// Number of distinct cells in these rows and columns (a crossing cell counts once).
+export function clearedCellCount({ rows, cols }) {
+  return rows.length * SIZE + cols.length * SIZE - rows.length * cols.length;
+}
+
+export function boardEmpty(board) {
+  return board.every(line => line.every(v => v === null));
+}
+
+// state: { score, streak, miss }. placed: cells in the piece. lines: from fullLines.
+// wiped: true if the board is empty after clearing.
+// Returns the new state plus what this placement earned, for the pop-up.
+export function scorePlacement(state, placed, lines, wiped = false) {
+  const count = lines.rows.length + lines.cols.length;
+  let { streak, miss } = state;
+  let clear = 0, bonus = 0;
+  if (count > 0) {
+    streak += 1;
+    miss = 0;
+    clear = CLEAR_POINTS * clearedCellCount(lines) * count * streak;
+    if (wiped) bonus = WIPE_BONUS;
+  } else {
+    miss += 1;
+    if (miss >= STREAK_GRACE) { streak = 0; miss = 0; }
+  }
+  const gained = placed * CELL_POINTS + clear + bonus;
+  return { score: state.score + gained, streak, miss, gained, clear, bonus, lines: count };
 }
