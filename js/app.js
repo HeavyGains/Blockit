@@ -3,7 +3,7 @@ import {
   isGameOver, dealTray, trayEmpty, fitsAnywhere, previewLines,
   newScore, scorePlacement, boardEmpty,
   dealTrickTray, TRICK_CHANCE, TRICK_BONUS,
-} from './logic.js?v=3';
+} from './logic.js?v=4';
 
 const LIFT = 56;      // px the dragged piece floats above the finger, so it stays visible
 const CLEAR_MS = 220; // matches the pop animation in style.css
@@ -52,12 +52,15 @@ function saveBest() {
 const STYLES = [
   { id: 'paper', name: 'Paper stickers' },
   { id: 'neon', name: 'Neon arcade' },
+  { id: 'neon-sunset', name: 'Neon sunset' },
+  { id: 'neon-ice', name: 'Neon ice' },
+  { id: 'neon-toxic', name: 'Neon toxic' },
   { id: 'candy', name: 'Candy jelly' },
   { id: 'wood', name: 'Woodshop' },
   { id: 'chalk', name: 'Chalkboard' },
   { id: 'pixel', name: 'Pixel' },
   { id: 'garden', name: 'Garden' },
-  { id: 'contrast', name: 'High contrast' },
+  { id: 'camo', name: 'Camo' },
   { id: 'classic', name: 'Classic' },
 ];
 const styles = store.get('blockit.style', {});
