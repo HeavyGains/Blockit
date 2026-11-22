@@ -11,6 +11,11 @@ lines cleared at once, times your streak (clears on back-to-back placements;
 2 misses are forgiven, the 3rd resets it). Emptying the board adds 500. Best
 score is saved on the phone for each player (tap the name to switch).
 
+Tricky sets: about 1 set in 6 (once the board has 16+ blocks) is a puzzle. One
+piece fits nowhere when it arrives, but there is a hidden order that uses line
+clears to make room, and at most a quarter of first moves lead to it. Placing
+all three earns "Solved!" +100.
+
 ## Run it
 
     npm run dev     # http://localhost:5173

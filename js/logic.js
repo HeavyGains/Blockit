@@ -182,3 +182,81 @@ export function scorePlacement(state, placed, lines, wiped = false) {
   const gained = placed * CELL_POINTS + clear + bonus;
   return { score: state.score + gained, streak, miss, gained, clear, bonus, lines: count };
 }
+
+// ---------- Trick sets ----------
+// A trick set looks impossible: at least one piece fits nowhere when the set
+// arrives. But there is an order and placement, using line clears to make
+// room, that gets all three down, and only a few first moves lead to it.
+
+export const TRICK_CHANCE = 1 / 6;  // share of sets that try to be a trick set
+export const TRICK_MIN_FILLED = 16; // board needs this many blocks first
+export const TRICK_MAX_SHARE = 0.25; // at most this share of first moves may work
+export const TRICK_BONUS = 100;     // for placing all of a trick set
+export const TRICK_TRIES = 60;      // candidate sets to test before giving up
+
+export function filledCount(board) {
+  return board.reduce((n, line) => n + line.filter(v => v !== null).length, 0);
+}
+
+// Place and clear, as one turn of play.
+export function playMove(board, piece, row, col) {
+  const placed = place(board, piece, row, col, 0);
+  return clearLines(placed, fullLines(placed));
+}
+
+// True if all of these pieces can be placed, in some order.
+export function canPlaceAll(board, pieces) {
+  if (pieces.length === 0) return true;
+  for (let i = 0; i < pieces.length; i++) {
+    const rest = pieces.filter((_, j) => j !== i);
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        if (canPlace(board, pieces[i], r, c) && canPlaceAll(playMove(board, pieces[i], r, c), rest)) return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Every legal first move, and how many of them still let all pieces be placed.
+export function firstMoveStats(board, pieces) {
+  let moves = 0, winning = 0;
+  for (let i = 0; i < pieces.length; i++) {
+    const rest = pieces.filter((_, j) => j !== i);
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        if (!canPlace(board, pieces[i], r, c)) continue;
+        moves++;
+        if (canPlaceAll(playMove(board, pieces[i], r, c), rest)) winning++;
+      }
+    }
+  }
+  return { moves, winning };
+}
+
+export function isTrickSet(board, pieces) {
+  if (pieces.every(p => fitsAnywhere(board, p))) return false;
+  const { moves, winning } = firstMoveStats(board, pieces);
+  return winning > 0 && winning / moves <= TRICK_MAX_SHARE;
+}
+
+// Try to deal a trick set for this board. Returns a tray, or null if none found.
+// One piece is drawn from those that fit nowhere right now; the other two are random.
+export function dealTrickTray(rng = Math.random, board, tries = TRICK_TRIES) {
+  if (filledCount(board) < TRICK_MIN_FILLED) return null;
+  const blocked = PIECES.filter(p => !fitsAnywhere(board, p));
+  if (blocked.length === 0) return null;
+  const pick = list => ({ ...list[Math.floor(rng() * list.length)], color: Math.floor(rng() * COLORS) });
+  for (let i = 0; i < tries; i++) {
+    const tray = [pick(blocked), pick(PIECES), pick(PIECES)];
+    if (isTrickSet(board, tray)) {
+      // Shuffle so the blocked piece isn't always on the left.
+      for (let k = tray.length - 1; k > 0; k--) {
+        const j = Math.floor(rng() * (k + 1));
+        [tray[k], tray[j]] = [tray[j], tray[k]];
+      }
+      return tray;
+    }
+  }
+  return null;
+}
