@@ -6,11 +6,13 @@ import {
   applyGravity, scoreChain, MODES,
   dayKey, dailyTray, shareText, shortDay,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=29';
-import { online, queueScore, fetchBoard } from './online.js?v=29';
-import { sfx, unlock, setSoundOn } from './sound.js?v=29';
+} from './logic.js?v=30';
+import { online, queueScore, fetchBoard } from './online.js?v=30';
+import { sfx, unlock, setSoundOn } from './sound.js?v=30';
+import { haptic, setHapticsOn } from './haptics.js?v=30';
 
-const LIFT = 56;      // px the dragged piece floats above the finger, so it stays visible
+const LIFT = 84;      // px the dragged piece floats above the finger, so it stays visible
+const GAIN = 1.4;     // the piece travels 1.4x the finger's movement, so short swipes reach the far side
 const CLEAR_MS = 220; // matches the pop animation in style.css
 const BLAST_MS = 560; // a clear with a bomb in it takes a little longer
 const FALL_MS = 260;  // matches the fall animation in style.css
@@ -61,6 +63,8 @@ const gravity = () => mode === 'gravity';
 let specials = store.get('blockit.specials', false) === true;
 let soundOn = store.get('blockit.sound', true) !== false;
 setSoundOn(soundOn);
+let hapticsOn = store.get('blockit.haptics', true) !== false;
+setHapticsOn(hapticsOn);
 // Phones only allow sound after a touch, so wake the audio on the first one.
 document.addEventListener('pointerdown', unlock, { capture: true });
 
@@ -377,7 +381,13 @@ function dealNext() {
 
 // ---------- Dragging ----------
 
-let drag = null; // { index, piece, pointerId, slot }
+let drag = null; // { index, piece, pointerId, slot, sx, sy }
+
+// Where the piece is, from the finger: it moves GAIN times as far as the finger
+// has moved since pick up.
+function dragPoint(x, y) {
+  return { x: drag.sx + (x - drag.sx) * GAIN, y: drag.sy + (y - drag.sy) * GAIN };
+}
 
 function cellPitch() {
   const r = boardEl.getBoundingClientRect();
@@ -393,7 +403,8 @@ function targetCell(x, y) {
   return { row: Math.round((py - top) / size), col: Math.round((px - left) / size) };
 }
 
-function moveDrag(x, y) {
+function moveDrag(fx, fy) {
+  const { x, y } = dragPoint(fx, fy);
   const w = dragEl.offsetWidth, h = dragEl.offsetHeight;
   dragEl.style.transform = `translate(${x - w / 2}px, ${y - h - LIFT}px)`;
   const { row, col } = targetCell(x, y);
@@ -431,10 +442,11 @@ trayEl.addEventListener('pointerdown', e => {
   if (!piece) return;
   e.preventDefault();
   slot.setPointerCapture(e.pointerId);
-  drag = { index, piece, pointerId: e.pointerId, slot };
+  drag = { index, piece, pointerId: e.pointerId, slot, sx: e.clientX, sy: e.clientY };
   dragEl.replaceChildren(pieceEl(piece));
   dragEl.hidden = false;
   slot.classList.add('lifted');
+  haptic.pick();
   moveDrag(e.clientX, e.clientY);
 });
 
@@ -445,7 +457,8 @@ trayEl.addEventListener('pointermove', e => {
 function endDrag(e, drop) {
   if (!drag || e.pointerId !== drag.pointerId) return;
   const { index, piece, slot } = drag;
-  const { row, col } = targetCell(e.clientX, e.clientY);
+  const at = dragPoint(e.clientX, e.clientY);
+  const { row, col } = targetCell(at.x, at.y);
   drag = null;
   clearGhost();
   dragEl.hidden = true;
@@ -464,6 +477,7 @@ function placePiece(index, piece, row, col) {
   const lines = fullLines(board);
   drawBoard();
   sfx.place();
+  haptic.place();
   const flip = gravity() && piece.special?.s === 'flip';
   if (lines.rows.length || lines.cols.length) {
     busy = true;
@@ -502,7 +516,8 @@ async function clearWithFlash(lines) {
       if (board[r][c] !== null) el.classList.add('blasting');
     } else el.classList.add('clearing');
   }
-  if (res.bombs.length) { explode(res); sfx.boom(); } else sfx.clear(lines.rows.length + lines.cols.length);
+  if (res.bombs.length) { explode(res); sfx.boom(); haptic.boom(); }
+  else { sfx.clear(lines.rows.length + lines.cols.length); haptic.clear(lines.rows.length + lines.cols.length); }
   await wait(res.bombs.length ? BLAST_MS : CLEAR_MS);
   cells.forEach(el => el.classList.remove('clearing', 'cracking', 'blasting'));
   board = res.board;
@@ -524,7 +539,6 @@ function explode(res) {
   void boardEl.offsetWidth; // restart the shake if it was already running
   boardEl.classList.add('shake');
   setTimeout(() => boardEl.classList.remove('shake'), 450);
-  try { navigator.vibrate?.([70, 40, 120]); } catch { /* no vibration */ }
   res.bombs.forEach(([br, bc], n) => setTimeout(() => blastAt(br, bc, res), n * 110));
 }
 
@@ -607,15 +621,15 @@ async function resolveClears(piece, row, col, lines) {
     score = scoreChain(score, next, chain, boardEmpty(board));
     addSpecialPoints(step);
     showChainPop(next, score);
-    if (score.bonus) sfx.fanfare(); else sfx.combo(chain);
+    if (score.bonus) { sfx.fanfare(); haptic.fanfare(); } else { sfx.combo(chain); haptic.combo(); }
     saveBest();
   }
 }
 
 // Extra sound on top of the clear: a fanfare for an empty board, a rising run for a streak.
 function cheer(result) {
-  if (result.bonus) sfx.fanfare();
-  else if (result.streak > 1) sfx.combo(result.streak);
+  if (result.bonus) { sfx.fanfare(); haptic.fanfare(); }
+  else if (result.streak > 1) { sfx.combo(result.streak); haptic.combo(); }
 }
 
 // Let every block fall, with each one sliding down from where it was.
@@ -661,6 +675,7 @@ function afterTurn() {
     if (daily()) saveDailyScore();
     showOver();
     sfx.gameOver();
+    haptic.gameOver();
   }
 }
 
@@ -847,11 +862,25 @@ soundBtn.addEventListener('click', () => {
   sfx.place(); // a little knock so you hear it's back on
 });
 
+const hapticsBtn = document.getElementById('haptics');
+function drawHaptics() {
+  hapticsBtn.setAttribute('aria-pressed', String(hapticsOn));
+  hapticsBtn.querySelector('b').textContent = hapticsOn ? 'On' : 'Off';
+}
+hapticsBtn.addEventListener('click', () => {
+  hapticsOn = !hapticsOn;
+  store.set('blockit.haptics', hapticsOn);
+  setHapticsOn(hapticsOn);
+  drawHaptics();
+  haptic.place(); // a tap so you feel it's back on
+});
+
 modeTagEl.addEventListener('click', () => {
   if (busy || drag) return;
   drawModes();
   drawSpecials();
   drawSound();
+  drawHaptics();
   modesEl.hidden = false;
 });
 document.getElementById('newgame').addEventListener('click', () => {
