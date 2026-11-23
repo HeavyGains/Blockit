@@ -5,7 +5,8 @@ import {
   dealTrickTray, TRICK_CHANCE, TRICK_BONUS,
   applyGravity, scoreChain, MODES,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=14';
+} from './logic.js?v=15';
+import { sfx, unlock, setSoundOn } from './sound.js?v=15';
 
 const LIFT = 56;      // px the dragged piece floats above the finger, so it stays visible
 const CLEAR_MS = 220; // matches the pop animation in style.css
@@ -48,6 +49,10 @@ let player = PLAYERS.includes(store.get('blockit.player')) ? store.get('blockit.
 let mode = MODES.some(m => m.id === store.get('blockit.mode')) ? store.get('blockit.mode') : 'classic';
 const gravity = () => mode === 'gravity';
 let specials = store.get('blockit.specials', false) === true;
+let soundOn = store.get('blockit.sound', true) !== false;
+setSoundOn(soundOn);
+// Phones only allow sound after a touch, so wake the audio on the first one.
+document.addEventListener('pointerdown', unlock, { capture: true });
 
 // Each mode, with or without special blocks, keeps its own game and best.
 // Classic without specials keeps the original 'blockit.best'.
@@ -333,6 +338,7 @@ function placePiece(index, piece, row, col) {
   tray[index] = null;
   const lines = fullLines(board);
   drawBoard();
+  sfx.place();
   const flip = gravity() && piece.special?.s === 'flip';
   if (lines.rows.length || lines.cols.length) {
     busy = true;
@@ -371,7 +377,7 @@ async function clearWithFlash(lines) {
       if (board[r][c] !== null) el.classList.add('blasting');
     } else el.classList.add('clearing');
   }
-  if (res.bombs.length) explode(res);
+  if (res.bombs.length) { explode(res); sfx.boom(); } else sfx.clear(lines.rows.length + lines.cols.length);
   await wait(res.bombs.length ? BLAST_MS : CLEAR_MS);
   cells.forEach(el => el.classList.remove('clearing', 'cracking', 'blasting'));
   board = res.board;
@@ -457,6 +463,7 @@ async function resolveClears(piece, row, col, lines) {
     score = scorePlacement(score, piece.cells.length, lines, boardEmpty(board));
     addSpecialPoints(res);
     showPop(piece, row, col, score);
+    cheer(score);
     saveBest();
     return;
   }
@@ -464,6 +471,7 @@ async function resolveClears(piece, row, col, lines) {
   score = scorePlacement(score, piece.cells.length, lines, boardEmpty(board));
   addSpecialPoints(res);
   showPop(piece, row, col, score);
+  cheer(score);
   saveBest();
   for (let chain = 2; ; chain++) {
     const next = fullLines(board);
@@ -474,8 +482,15 @@ async function resolveClears(piece, row, col, lines) {
     score = scoreChain(score, next, chain, boardEmpty(board));
     addSpecialPoints(step);
     showChainPop(next, score);
+    if (score.bonus) sfx.fanfare(); else sfx.combo(chain);
     saveBest();
   }
+}
+
+// Extra sound on top of the clear: a fanfare for an empty board, a rising run for a streak.
+function cheer(result) {
+  if (result.bonus) sfx.fanfare();
+  else if (result.streak > 1) sfx.combo(result.streak);
 }
 
 // Let every block fall, with each one sliding down from where it was.
@@ -509,6 +524,7 @@ function afterTurn() {
       score = { ...score, score: score.score + TRICK_BONUS };
       saveBest();
       showSolved();
+      sfx.fanfare();
     }
     tray = dealNext();
   }
@@ -520,6 +536,7 @@ function afterTurn() {
     document.getElementById('final').textContent = score.score.toLocaleString();
     document.getElementById('newbest').hidden = !newBest;
     overEl.hidden = false;
+    sfx.gameOver();
   }
 }
 
@@ -613,10 +630,24 @@ specialsBtn.addEventListener('click', () => {
   switchGame();
 });
 
+const soundBtn = document.getElementById('sound');
+function drawSound() {
+  soundBtn.setAttribute('aria-pressed', String(soundOn));
+  soundBtn.querySelector('b').textContent = soundOn ? 'On' : 'Off';
+}
+soundBtn.addEventListener('click', () => {
+  soundOn = !soundOn;
+  store.set('blockit.sound', soundOn);
+  setSoundOn(soundOn);
+  drawSound();
+  sfx.place(); // a little knock so you hear it's back on
+});
+
 modeTagEl.addEventListener('click', () => {
   if (busy || drag) return;
   drawModes();
   drawSpecials();
+  drawSound();
   modesEl.hidden = false;
 });
 document.getElementById('newgame').addEventListener('click', () => {
