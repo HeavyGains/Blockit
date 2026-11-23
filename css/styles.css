@@ -727,7 +727,7 @@
 [data-style="halloween"] {
   --bg: #150c1f;
   --board: #22143a;
-  --empty: rgba(160, 120, 255, 0.07);
+  --empty: rgba(170, 130, 255, 0.14);
   --text: #f6eefc;
   --muted: #a993c4;
   --accent: #ff8a1f;
@@ -742,10 +742,16 @@
   --ink: #1a0f24;
 }
 
-/* Night board with a big pale moon behind the grid. */
+/* The moon hangs in the sky behind the page, not on the board. */
+[data-style="halloween"] body {
+  background:
+    radial-gradient(circle at 82% 93%, #f6edc8 0 30px, rgba(246, 237, 200, 0.18) 32px 46px, transparent 48px),
+    var(--bg);
+}
+
+/* Night board with low green fog. */
 [data-style="halloween"] .board {
   background:
-    radial-gradient(circle at 78% 18%, rgba(255, 240, 200, 0.16) 0 14%, rgba(255, 240, 200, 0.05) 15% 22%, transparent 23%),
     radial-gradient(ellipse 120% 40% at 50% 110%, rgba(123, 214, 74, 0.12), transparent 70%),
     var(--board);
   box-shadow: 0 0 0 3px #3a2366, 0 0 26px rgba(255, 138, 31, 0.18);
@@ -822,8 +828,8 @@
 
 [data-style="thanksgiving"] {
   --bg: #3a2414;
-  --board: #e9d8b4;
-  --empty: rgba(120, 70, 30, 0.1);
+  --board: #b8462a;
+  --empty: transparent;
   --text: #fff1dc;
   --muted: #d1b48d;
   --accent: #e08a2e;
@@ -837,13 +843,27 @@
   --c5: #f2c94c;
 }
 
-/* A plaid tablecloth with a wooden edge. */
+/* Warm candlelit room behind the table. */
+[data-style="thanksgiving"] body {
+  background:
+    radial-gradient(ellipse 90% 45% at 50% 0, rgba(255, 170, 70, 0.35), transparent 70%),
+    linear-gradient(#5a2e14, #2b170b);
+}
+
+/* Red-and-gold check tablecloth with a wooden edge... */
 [data-style="thanksgiving"] .board {
   background:
-    repeating-linear-gradient(90deg, rgba(180, 60, 30, 0.14) 0 6px, transparent 6px 22px),
-    repeating-linear-gradient(0deg, rgba(180, 60, 30, 0.14) 0 6px, transparent 6px 22px),
-    var(--board);
-  box-shadow: 0 0 0 4px #7a4a26, 0 6px 18px rgba(0, 0, 0, 0.45);
+    repeating-linear-gradient(90deg, rgba(60, 10, 0, 0.28) 0 calc(var(--cell) / 2), transparent 0 var(--cell)),
+    repeating-linear-gradient(0deg, rgba(60, 10, 0, 0.28) 0 calc(var(--cell) / 2), transparent 0 var(--cell)),
+    repeating-linear-gradient(90deg, rgba(255, 200, 80, 0.18) 0 2px, transparent 0 calc(var(--cell) / 2)),
+    #b8462a;
+  background-position: 4px 4px;
+  box-shadow: 0 0 0 4px #7a4a26, 0 0 0 6px #4a2a14, 0 8px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* ...set with a plate at every spot. Food sits on the plates. */
+[data-style="thanksgiving"] .board .cell {
+  background: radial-gradient(circle, #fffaf0 0 37%, #eadcc2 38% 40%, #fffaf0 41% 45%, rgba(60, 20, 0, 0.35) 46% 48%, transparent 49%);
 }
 
 /* Apple with stem and leaf. */
