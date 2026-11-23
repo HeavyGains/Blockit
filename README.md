@@ -45,6 +45,14 @@ player per day; at the end, Share score sends e.g. "Blockit Daily Duel 11/22:
 4,210 (Jason)" (or copies it). Today's scores on the phone are in
 `blockit.daily`, and players on the same phone see each other's on the result.
 
+Scoreboard: Game sheet > 🏆 Scoreboard. One ranked list per mode (Classic,
+Gravity, with specials ✦, Duel today, Duel best). Without setup it shows the
+players on this phone. To share it across phones: make a free Supabase
+project, run `supabase/setup.sql` in its SQL Editor, and put the Project URL
+and anon public key in `js/config.js`. New bests and finished Duels are then
+sent (`js/online.js`, with an outbox for offline play), and the board shows
+everyone. The first run sends the phone's existing bests.
+
 ## Run it
 
     npm run dev     # http://localhost:5173

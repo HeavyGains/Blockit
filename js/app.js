@@ -6,8 +6,9 @@ import {
   applyGravity, scoreChain, MODES,
   dayKey, dailyTray, shareText, shortDay,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=19';
-import { sfx, unlock, setSoundOn } from './sound.js?v=19';
+} from './logic.js?v=21';
+import { online, queueScore, fetchBoard } from './online.js?v=21';
+import { sfx, unlock, setSoundOn } from './sound.js?v=21';
 
 const LIFT = 56;      // px the dragged piece floats above the finger, so it stays visible
 const CLEAR_MS = 220; // matches the pop animation in style.css
@@ -77,6 +78,8 @@ function saveBest() {
     bests[player] = score.score;
     store.set(bestKey(), bests);
     newBest = true;
+    // A Duel score goes online when the Duel ends, with its day.
+    if (!daily()) queueScore({ player, mode: variant(), score: score.score });
   }
 }
 
@@ -663,6 +666,7 @@ function dailyScores() {
 function saveDailyScore() {
   const scores = { ...dailyScores(), [player]: score.score };
   store.set('blockit.daily', { day, scores });
+  queueScore({ player, mode: 'daily', score: score.score, day });
 }
 
 async function shareScore() {
@@ -820,6 +824,105 @@ document.getElementById('newgame').addEventListener('click', () => {
   modesEl.hidden = true;
   newGame();
 });
+// ---------- Scoreboard ----------
+// Every player on this phone: best in each mode, and today's Daily Duel.
+// A crown marks the top score in each row.
+
+const scoresEl = document.getElementById('scores');
+const BOARD_TABS = [
+  { id: 'classic', name: 'Classic', key: 'blockit.best' },
+  { id: 'gravity', name: 'Gravity', key: 'blockit.best.gravity' },
+  { id: 'classic-special', name: 'Classic ✦', key: 'blockit.best.classic-special' },
+  { id: 'gravity-special', name: 'Gravity ✦', key: 'blockit.best.gravity-special' },
+  { id: 'today', name: 'Duel today' },
+  { id: 'daily', name: 'Duel best', key: 'blockit.best.daily' },
+];
+let boardTab = 'classic';
+let onlineBoard = null; // last scores fetched from the server
+let boardNote = '';
+
+// Scores for a tab: the server's when we have them, merged with this phone's
+// (so a score that hasn't been sent yet still shows).
+function tabScores(tab) {
+  const local = tab.id === 'today' ? dailyScores() : store.get(tab.key, {});
+  const remote = onlineBoard ? (tab.id === 'today' ? onlineBoard.today : onlineBoard.bests[tab.id] || {}) : {};
+  const all = { ...remote };
+  for (const [p, v] of Object.entries(local)) all[p] = Math.max(all[p] || 0, v);
+  return Object.entries(all).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+}
+
+function drawScoreboard() {
+  const tabsEl = document.getElementById('scoretabs');
+  tabsEl.replaceChildren(...BOARD_TABS.map(t => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip';
+    b.textContent = t.name;
+    b.setAttribute('aria-pressed', String(t.id === boardTab));
+    b.addEventListener('click', () => { boardTab = t.id; drawScoreboard(); });
+    return b;
+  }));
+  const rows = tabScores(BOARD_TABS.find(t => t.id === boardTab));
+  const medals = ['👑', '🥈', '🥉'];
+  const list = document.getElementById('scorelist');
+  if (!rows.length) {
+    const li = document.createElement('li');
+    li.className = 'empty';
+    li.textContent = 'No scores yet';
+    list.replaceChildren(li);
+  } else {
+    list.replaceChildren(...rows.map(([name, v], i) => {
+      const li = document.createElement('li');
+      if (name === player) li.className = 'me';
+      const rank = document.createElement('span');
+      rank.className = 'rank';
+      rank.textContent = medals[i] || String(i + 1);
+      const who = document.createElement('span');
+      who.className = 'who-name';
+      who.textContent = name;
+      const pts = document.createElement('b');
+      pts.textContent = v.toLocaleString();
+      li.append(rank, who, pts);
+      return li;
+    }));
+  }
+  document.getElementById('scorenote').textContent = boardNote
+    || (online() ? 'Everyone, on every phone.' : 'Everyone who plays on this phone.');
+}
+
+async function refreshOnline() {
+  if (!online()) return;
+  boardNote = 'Loading scores from everyone…';
+  drawScoreboard();
+  try {
+    onlineBoard = await fetchBoard(dayKey());
+    boardNote = '';
+  } catch {
+    boardNote = "Couldn't reach the online scores. Showing this phone.";
+  }
+  if (!scoresEl.hidden) drawScoreboard();
+}
+
+// The first time the online board is on, send this phone's existing bests.
+if (online() && !store.get('blockit.synced', false)) {
+  for (const t of BOARD_TABS) {
+    if (!t.key || t.id === 'daily') continue;
+    for (const [p, v] of Object.entries(store.get(t.key, {}))) queueScore({ player: p, mode: t.id, score: v });
+  }
+  for (const [p, v] of Object.entries(dailyScores())) queueScore({ player: p, mode: 'daily', score: v, day: dayKey() });
+  store.set('blockit.synced', true);
+}
+
+document.getElementById('scores-open').addEventListener('click', () => {
+  modesEl.hidden = true;
+  boardTab = daily() ? 'today' : variant();
+  drawScoreboard();
+  scoresEl.hidden = false;
+  refreshOnline();
+});
+document.getElementById('scores-close').addEventListener('click', () => { scoresEl.hidden = true; });
+scoresEl.addEventListener('click', e => { if (e.target === scoresEl) scoresEl.hidden = true; });
+
 document.getElementById('modes-close').addEventListener('click', () => { modesEl.hidden = true; });
 modesEl.addEventListener('click', e => { if (e.target === modesEl) modesEl.hidden = true; });
 
