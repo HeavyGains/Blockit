@@ -561,12 +561,15 @@
   --muted: #b9d3c0;
   --accent: #f2c14e;
   --glow: rgba(255, 215, 120, 0.9);
-  --c0: #d93a3a;
-  --c1: #f2c14e;
-  --c2: #dfe6ea;
-  --c3: #3b7fd1;
-  --c4: #9b5fd1;
-  --c5: #f08ab0;
+  /* Cookie colors: gingerbread, sugar star, iced tree, blue snowflake,
+     chocolate crinkle, peppermint. */
+  --c0: #b8703f;
+  --c1: #f4d58d;
+  --c2: #3fa362;
+  --c3: #8cc8f2;
+  --c4: #6b4430;
+  --c5: #e0465a;
+  --icing: #fffaf0;
 }
 
 /* Felt board with a gold rim. */
@@ -603,40 +606,84 @@
 
 @keyframes twinkle { 50% { opacity: 0.25; } }
 
-/* Wrapped presents, each color in its own paper so the board isn't all ribbons.
-   Every block gets a soft shine; the paper pattern sits under it. */
+/* Christmas cookies: each color is its own cookie, cut to shape.
+   The cut shape is a clip-path, so the empty board cells stay square. */
 [data-style="gift"] .cell[data-c]::after {
-  border-radius: 4px;
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.28), transparent 45%),
-    var(--paper, none),
-    var(--k);
-  background-size: 100% 100%, var(--paper-size, 100% 100%), 100% 100%;
-  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.22), 0 2px 3px rgba(0, 0, 0, 0.3);
+  inset: 1px;
+  border-radius: 0;
+  background: var(--deco, none), var(--k);
+  box-shadow: none;
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.3));
 }
 
-/* Red: little white snow dots. */
-[data-style="gift"] .cell[data-c="0"] {
-  --paper: radial-gradient(circle, rgba(255, 255, 255, 0.55) 1.4px, transparent 2px);
-  --paper-size: calc(var(--cell) / 3.5) calc(var(--cell) / 3.5);
-}
-/* Gold: plain foil. Silver: thin red candy stripes. */
-[data-style="gift"] .cell[data-c="2"] {
-  --paper: repeating-linear-gradient(45deg, rgba(200, 40, 58, 0.75) 0 2px, transparent 2px 7px);
-}
-/* Blue: one gold ribbon across the middle. */
-[data-style="gift"] .cell[data-c="3"] {
-  --paper: linear-gradient(transparent 40%, #f7d774 40% 60%, transparent 60%);
-}
-/* Purple: plain. Pink: the only one with a full ribbon cross. */
-[data-style="gift"] .cell[data-c="5"] {
-  --paper:
-    linear-gradient(90deg, transparent 42%, #fff3f8 42% 58%, transparent 58%),
-    linear-gradient(transparent 42%, #fff3f8 42% 58%, transparent 58%);
+/* Gingerbread person: icing eyes, smile and buttons. */
+[data-style="gift"] .cell[data-c="0"]::after {
+  clip-path: polygon(38% 0, 62% 0, 70% 9%, 70% 24%, 63% 32%, 96% 33%, 100% 41%, 96% 49%, 73% 50%, 76% 70%, 94% 93%, 88% 100%, 64% 100%, 50% 80%, 36% 100%, 12% 100%, 6% 93%, 24% 70%, 27% 50%, 4% 49%, 0 41%, 4% 33%, 37% 32%, 30% 24%, 30% 9%);
+  --deco:
+    radial-gradient(circle at 43% 13%, var(--icing) 2.5%, transparent 3.5%),
+    radial-gradient(circle at 57% 13%, var(--icing) 2.5%, transparent 3.5%),
+    radial-gradient(ellipse 9% 4% at 50% 22%, transparent 55%, var(--icing) 60% 95%, transparent) 0 -2% / 100% 100% no-repeat,
+    radial-gradient(circle at 50% 46%, #e0465a 4%, transparent 5%),
+    radial-gradient(circle at 50% 61%, #3fa362 4%, transparent 5%),
+    linear-gradient(90deg, transparent 6%, var(--icing) 6% 9%, transparent 9% 91%, var(--icing) 91% 94%, transparent 94%) 0 38% / 100% 8% no-repeat;
 }
 
-/* Clear: the present pops open in a burst of gold. */
+/* Sugar star with a darker iced middle. */
+[data-style="gift"] .cell[data-c="1"]::after {
+  clip-path: polygon(50% 0, 62% 34%, 98% 35%, 69% 57%, 80% 93%, 50% 72%, 20% 93%, 31% 57%, 2% 35%, 38% 34%);
+  --deco: radial-gradient(circle at 50% 53%, #f2b632 18%, transparent 19%),
+    radial-gradient(circle at 50% 53%, #fff3c4 30%, transparent 31%);
+}
+
+/* Iced tree with ornament sprinkles and a trunk. */
+[data-style="gift"] .cell[data-c="2"]::after {
+  clip-path: polygon(50% 0, 76% 32%, 64% 32%, 88% 60%, 74% 60%, 98% 86%, 58% 86%, 58% 100%, 42% 100%, 42% 86%, 2% 86%, 26% 60%, 12% 60%, 36% 32%, 24% 32%);
+  --deco:
+    radial-gradient(circle at 50% 9%, #f2c14e 6%, transparent 7%),
+    radial-gradient(circle at 44% 40%, #e0465a 4%, transparent 5%),
+    radial-gradient(circle at 62% 56%, #fffaf0 4%, transparent 5%),
+    radial-gradient(circle at 34% 74%, #f2c14e 4%, transparent 5%),
+    radial-gradient(circle at 70% 78%, #e0465a 4%, transparent 5%),
+    linear-gradient(transparent 86%, #7a4a2a 86%);
+}
+
+/* Round blue-iced cookie with a white snowflake. */
+[data-style="gift"] .cell[data-c="3"]::after {
+  clip-path: circle(48%);
+  --deco:
+    radial-gradient(circle, var(--icing) 7%, transparent 8%),
+    linear-gradient(var(--icing), var(--icing)) center / 6% 62% no-repeat,
+    linear-gradient(60deg, transparent 47%, var(--icing) 47% 53%, transparent 53%) center / 54% 62% no-repeat,
+    linear-gradient(-60deg, transparent 47%, var(--icing) 47% 53%, transparent 53%) center / 54% 62% no-repeat,
+    radial-gradient(circle, transparent 60%, #c9a26a 61%);
+}
+
+/* Chocolate crinkle dusted with powdered sugar. */
+[data-style="gift"] .cell[data-c="4"]::after {
+  clip-path: polygon(50% 2%, 66% 6%, 82% 14%, 94% 30%, 98% 50%, 93% 68%, 84% 84%, 66% 95%, 50% 98%, 33% 95%, 16% 86%, 6% 70%, 2% 50%, 7% 31%, 17% 15%, 33% 5%);
+  --deco:
+    radial-gradient(ellipse 16% 10% at 30% 28%, var(--icing) 70%, transparent 75%),
+    radial-gradient(ellipse 14% 9% at 66% 34%, var(--icing) 70%, transparent 75%),
+    radial-gradient(ellipse 18% 9% at 46% 58%, var(--icing) 70%, transparent 75%),
+    radial-gradient(ellipse 12% 8% at 74% 70%, var(--icing) 70%, transparent 75%),
+    radial-gradient(ellipse 12% 8% at 26% 72%, var(--icing) 70%, transparent 75%);
+}
+
+/* Peppermint swirl. */
+[data-style="gift"] .cell[data-c="5"]::after {
+  clip-path: circle(48%);
+  --deco:
+    radial-gradient(circle, #fff 14%, transparent 15%),
+    repeating-conic-gradient(from 10deg, var(--k) 0 30deg, #fff 30deg 60deg);
+}
+
+/* Specials sit on top of the cookie; keep stone and crack readable. */
+[data-style="gift"] .cell[data-s="stone"]::after,
+[data-style="gift"] .cell[data-s="crack"]::after { clip-path: none; --deco: none; border-radius: 4px; }
+
+/* Clear: the cookie crumbles in a burst of sugar. */
 [data-style="gift"] .cell.clearing::after {
+  clip-path: none;
   background: radial-gradient(circle, #fff3c4, #f2c14e 60%, transparent 70%);
   animation: unwrap 220ms ease-out forwards;
 }
