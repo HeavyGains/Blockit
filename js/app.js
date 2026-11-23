@@ -4,9 +4,10 @@ import {
   newScore, scorePlacement, boardEmpty,
   dealTrickTray, TRICK_CHANCE, TRICK_BONUS,
   applyGravity, scoreChain, MODES,
+  dayKey, dailyTray, shareText, shortDay,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=18';
-import { sfx, unlock, setSoundOn } from './sound.js?v=18';
+} from './logic.js?v=19';
+import { sfx, unlock, setSoundOn } from './sound.js?v=19';
 
 const LIFT = 56;      // px the dragged piece floats above the finger, so it stays visible
 const CLEAR_MS = 220; // matches the pop animation in style.css
@@ -31,6 +32,8 @@ let busy = false; // true while lines are clearing
 let score = newScore();
 let newBest = false; // beat the saved best during this game
 let trickSet = false; // the tray in play is a trick set
+let day = '';  // Daily Duel: the day this game belongs to
+let setNo = 0; // Daily Duel: which set of the day is in the tray
 
 // ---------- Players and best scores (saved on this device) ----------
 
@@ -62,7 +65,9 @@ document.addEventListener('pointerdown', unlock, { capture: true });
 
 // Each mode, with or without special blocks, keeps its own game and best.
 // Classic without specials keeps the original 'blockit.best'.
-const variant = () => (specials ? `${mode}-special` : mode);
+const daily = () => mode === 'daily';
+// Daily Duel always uses plain Classic rules, so specials don't apply.
+const variant = () => (specials && !daily() ? `${mode}-special` : mode);
 const bestKey = () => (variant() === 'classic' ? 'blockit.best' : `blockit.best.${variant()}`);
 let bests = store.get(bestKey(), {});
 const best = () => bests[player] || 0;
@@ -148,6 +153,7 @@ function choosePlayer(name) {
   saveBest();
   drawScore();
   playersEl.hidden = true;
+  if (daily()) switchGame(); // each player has their own Daily Duel game
 }
 
 function drawPlayers() {
@@ -267,7 +273,7 @@ function drawScore() {
   streakEl.textContent = `x${score.streak}`;
   whoEl.textContent = player;
   bestEl.textContent = best().toLocaleString();
-  modeTagEl.textContent = `${MODES.find(m => m.id === mode).name}${specials ? ' · Specials' : ''} ▾`;
+  modeTagEl.textContent = `${MODES.find(m => m.id === mode).name}${specials && !daily() ? ' · Specials' : ''} ▾`;
 }
 
 function draw() {
@@ -324,6 +330,7 @@ const withSpecials = t => (gravity()
 
 // About 1 set in TRICK_CHANCE is a trick set when the board allows one.
 function dealNext() {
+  if (daily()) { setNo++; trickSet = false; return dailyTray(day, setNo, board); }
   // Trick sets are solved with Classic rules, so they only come in Classic.
   if (specials) return withSpecials(dealTray(Math.random, board));
   const trick = !gravity() && Math.random() < TRICK_CHANCE ? dealTrickTray(Math.random, board) : null;
@@ -614,10 +621,61 @@ function afterTurn() {
     saveGame();
   } else {
     forgetGame(); // a finished game isn't resumed; next time starts fresh
-    document.getElementById('final').textContent = score.score.toLocaleString();
-    document.getElementById('newbest').hidden = !newBest;
-    overEl.hidden = false;
+    if (daily()) saveDailyScore();
+    showOver();
     sfx.gameOver();
+  }
+}
+
+// ---------- Game over / Daily Duel results ----------
+
+const againBtn = document.getElementById('again');
+const overAltBtn = document.getElementById('over-alt');
+
+function showOver() {
+  document.getElementById('final').textContent = score.score.toLocaleString();
+  document.getElementById('newbest').hidden = !newBest;
+  const title = overEl.querySelector('h2');
+  const hint = overEl.querySelector('.hint');
+  if (daily()) {
+    title.textContent = `Daily Duel ${shortDay(day)}`;
+    const scores = dailyScores();
+    hint.textContent = Object.keys(scores).length > 1
+      ? Object.entries(scores).sort((a, b) => b[1] - a[1]).map(([n, v]) => `${n} ${v.toLocaleString()}`).join(' · ')
+      : 'New pieces tomorrow. Send your score to compare!';
+    againBtn.textContent = 'Share score';
+    overAltBtn.hidden = false;
+  } else {
+    title.textContent = 'No moves left';
+    hint.textContent = 'None of your pieces fit on the board.';
+    againBtn.textContent = 'Play again';
+    overAltBtn.hidden = true;
+  }
+  overEl.hidden = false;
+}
+
+// Today's Daily Duel scores on this phone, by player. Older days are dropped.
+function dailyScores() {
+  const d = store.get('blockit.daily', null);
+  return d && d.day === dayKey() && d.scores ? d.scores : {};
+}
+
+function saveDailyScore() {
+  const scores = { ...dailyScores(), [player]: score.score };
+  store.set('blockit.daily', { day, scores });
+}
+
+async function shareScore() {
+  const text = shareText(day, score.score, player);
+  try {
+    if (navigator.share) { await navigator.share({ text }); return; }
+  } catch { return; /* closed the share sheet */ }
+  try {
+    await navigator.clipboard.writeText(text);
+    againBtn.textContent = 'Copied!';
+    setTimeout(() => { againBtn.textContent = 'Share score'; }, 1500);
+  } catch {
+    againBtn.textContent = text;
   }
 }
 
@@ -625,10 +683,11 @@ function afterTurn() {
 // Each mode keeps its own game in progress on this device, so switching modes
 // (or closing the page) and coming back picks up where you left off.
 
-const gameKey = () => `blockit.game.${variant()}`;
+// Daily Duel keeps one game per player, since each gets one try a day.
+const gameKey = () => (daily() ? `blockit.game.daily.${player}` : `blockit.game.${variant()}`);
 
 function saveGame() {
-  store.set(gameKey(), { board, tray, score, trickSet });
+  store.set(gameKey(), { board, tray, score, trickSet, day, setNo });
 }
 
 function forgetGame() {
@@ -642,6 +701,9 @@ function loadGame() {
     && g.board.every(line => Array.isArray(line) && line.length === SIZE)
     && Array.isArray(g.tray) && g.tray.length === 3 && g.score && typeof g.score.score === 'number';
   if (!ok || isGameOver(g.board, g.tray)) return false;
+  if (daily() && g.day !== dayKey()) return false; // yesterday's duel is over
+  day = g.day || '';
+  setNo = g.setNo || 0;
   board = g.board;
   tray = g.tray;
   score = g.score;
@@ -653,16 +715,36 @@ function loadGame() {
 
 function newGame() {
   board = emptyBoard();
-  tray = specials ? withSpecials(dealTray()) : dealTray();
   trickSet = false;
   score = newScore();
   newBest = false;
   overEl.hidden = true;
+  if (daily()) {
+    day = dayKey();
+    setNo = 0;
+    tray = dailyTray(day, 0);
+    // One try a day: if this player already played today, show their result.
+    const done = dailyScores()[player];
+    if (done !== undefined) {
+      score = { ...score, score: done };
+      tray = [null, null, null];
+      draw();
+      showOver();
+      return;
+    }
+  } else {
+    tray = specials ? withSpecials(dealTray()) : dealTray();
+  }
   saveGame();
   draw();
 }
 
-document.getElementById('again').addEventListener('click', newGame);
+againBtn.addEventListener('click', () => (daily() ? shareScore() : newGame()));
+overAltBtn.addEventListener('click', () => {
+  mode = 'classic';
+  store.set('blockit.mode', mode);
+  switchGame();
+});
 
 // ---------- Mode menu ----------
 // Picking a mode resumes its saved game, or starts one. Picking the one you're
@@ -688,6 +770,7 @@ function drawModes() {
       mode = m.id;
       store.set('blockit.mode', mode);
       switchGame();
+      drawSpecials();
     });
     return b;
   }));
@@ -701,8 +784,10 @@ function switchGame() {
 
 const specialsBtn = document.getElementById('specials');
 function drawSpecials() {
-  specialsBtn.setAttribute('aria-pressed', String(specials));
-  specialsBtn.querySelector('b').textContent = specials ? 'On' : 'Off';
+  specialsBtn.setAttribute('aria-pressed', String(specials && !daily()));
+  specialsBtn.querySelector('b').textContent = daily() ? 'Off' : specials ? 'On' : 'Off';
+  specialsBtn.disabled = daily();
+  document.getElementById('newgame').hidden = daily(); // one try a day
 }
 specialsBtn.addEventListener('click', () => {
   specials = !specials;

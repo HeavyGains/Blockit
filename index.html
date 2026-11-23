@@ -12,8 +12,8 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-  <link rel="stylesheet" href="css/style.css?v=18">
-  <link rel="stylesheet" href="css/styles.css?v=18">
+  <link rel="stylesheet" href="css/style.css?v=19">
+  <link rel="stylesheet" href="css/styles.css?v=19">
   <script>
     // Set the saved style before the page draws, so it doesn't flash.
     try {
@@ -54,6 +54,7 @@
       <p id="newbest" class="newbest" hidden>New best!</p>
       <p class="hint">None of your pieces fit on the board.</p>
       <button id="again" class="primary-btn" type="button">Play again</button>
+      <button id="over-alt" class="text-btn" type="button" hidden>Play Classic</button>
     </div>
   </div>
 
@@ -93,7 +94,7 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=18"></script>
+  <script type="module" src="js/app.js?v=19"></script>
   <script>
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' });
   </script>

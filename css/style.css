@@ -630,3 +630,4 @@ main {
 
 html[data-style] .pop.boom { font-size: 38px; color: #ff8f00; text-shadow: 0 0 10px rgba(255, 170, 0, 0.8), 0 2px 0 #7a2500; }
 html[data-style] .pop.boom small { color: #ff6d00; text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35); }
+.toggle-btn:disabled { opacity: 0.5; }
