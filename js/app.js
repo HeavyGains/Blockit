@@ -11,7 +11,8 @@ import { online, queueScore, fetchBoard } from './online.js?v=30';
 import { sfx, unlock, setSoundOn } from './sound.js?v=30';
 import { haptic, setHapticsOn } from './haptics.js?v=30';
 
-const LIFT = 56;      // px the dragged piece floats above the finger, so it stays visible
+const LIFT = 84;      // px the dragged piece floats above the finger, so it stays visible
+const GAIN = 1.4;     // the piece travels 1.4x the finger's movement, so short swipes reach the far side
 const CLEAR_MS = 220; // matches the pop animation in style.css
 const BLAST_MS = 560; // a clear with a bomb in it takes a little longer
 const FALL_MS = 260;  // matches the fall animation in style.css
@@ -380,7 +381,13 @@ function dealNext() {
 
 // ---------- Dragging ----------
 
-let drag = null; // { index, piece, pointerId, slot }
+let drag = null; // { index, piece, pointerId, slot, sx, sy }
+
+// Where the piece is, from the finger: it moves GAIN times as far as the finger
+// has moved since pick up.
+function dragPoint(x, y) {
+  return { x: drag.sx + (x - drag.sx) * GAIN, y: drag.sy + (y - drag.sy) * GAIN };
+}
 
 function cellPitch() {
   const r = boardEl.getBoundingClientRect();
@@ -396,7 +403,8 @@ function targetCell(x, y) {
   return { row: Math.round((py - top) / size), col: Math.round((px - left) / size) };
 }
 
-function moveDrag(x, y) {
+function moveDrag(fx, fy) {
+  const { x, y } = dragPoint(fx, fy);
   const w = dragEl.offsetWidth, h = dragEl.offsetHeight;
   dragEl.style.transform = `translate(${x - w / 2}px, ${y - h - LIFT}px)`;
   const { row, col } = targetCell(x, y);
@@ -434,7 +442,7 @@ trayEl.addEventListener('pointerdown', e => {
   if (!piece) return;
   e.preventDefault();
   slot.setPointerCapture(e.pointerId);
-  drag = { index, piece, pointerId: e.pointerId, slot };
+  drag = { index, piece, pointerId: e.pointerId, slot, sx: e.clientX, sy: e.clientY };
   dragEl.replaceChildren(pieceEl(piece));
   dragEl.hidden = false;
   slot.classList.add('lifted');
@@ -449,7 +457,8 @@ trayEl.addEventListener('pointermove', e => {
 function endDrag(e, drop) {
   if (!drag || e.pointerId !== drag.pointerId) return;
   const { index, piece, slot } = drag;
-  const { row, col } = targetCell(e.clientX, e.clientY);
+  const at = dragPoint(e.clientX, e.clientY);
+  const { row, col } = targetCell(at.x, at.y);
   drag = null;
   clearGhost();
   dragEl.hidden = true;
