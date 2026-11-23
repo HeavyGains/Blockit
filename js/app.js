@@ -6,9 +6,9 @@ import {
   applyGravity, scoreChain, MODES,
   dayKey, dailyTray, shareText, shortDay,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=26';
-import { online, queueScore, fetchBoard } from './online.js?v=26';
-import { sfx, unlock, setSoundOn } from './sound.js?v=26';
+} from './logic.js?v=27';
+import { online, queueScore, fetchBoard } from './online.js?v=27';
+import { sfx, unlock, setSoundOn } from './sound.js?v=27';
 
 const LIFT = 56;      // px the dragged piece floats above the finger, so it stays visible
 const CLEAR_MS = 220; // matches the pop animation in style.css
@@ -99,6 +99,8 @@ const STYLES = [
   { id: 'camo', name: 'Camo' },
   { id: 'classic', name: 'Classic' },
   // Seasonal styles: a tab of their own in the Style sheet.
+  { id: 'halloween', name: 'Halloween', group: 'seasonal' },
+  { id: 'thanksgiving', name: 'Thanksgiving', group: 'seasonal' },
   { id: 'snowfall', name: 'Winter', group: 'seasonal' },
   { id: 'gift', name: 'Christmas', group: 'seasonal' },
 ];
