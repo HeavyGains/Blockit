@@ -40,24 +40,66 @@ function tone(freq, { at = 0, dur = 0.15, type = 'sine', vol = 0.3, to = null } 
   osc.stop(t + dur + 0.02);
 }
 
-// A burst of filtered noise, for the bomb.
-function noise({ at = 0, dur = 0.6, vol = 0.6, from = 1800, to = 120 } = {}) {
-  const t = ctx.currentTime + at;
-  const len = Math.floor(ctx.sampleRate * dur);
-  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
-  const data = buf.getChannelData(0);
-  for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
-  const src = ctx.createBufferSource();
-  src.buffer = buf;
-  const filter = ctx.createBiquadFilter();
-  filter.type = 'lowpass';
-  filter.frequency.setValueAtTime(from, t);
-  filter.frequency.exponentialRampToValueAtTime(to, t + dur);
-  const g = ctx.createGain();
-  g.gain.setValueAtTime(vol, t);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  src.connect(filter).connect(g).connect(master);
-  src.start(t);
+// The bomb gets its own chain: soft distortion adds overtones so the low end
+// still comes through on small phone speakers, and a compressor makes it loud
+// without clipping.
+function boomFx() {
+  const t = ctx.currentTime;
+  const shaper = ctx.createWaveShaper();
+  const curve = new Float32Array(1024);
+  for (let i = 0; i < curve.length; i++) {
+    const x = (i / (curve.length - 1)) * 2 - 1;
+    curve[i] = Math.tanh(x * 3);
+  }
+  shaper.curve = curve;
+  const comp = ctx.createDynamicsCompressor();
+  comp.threshold.value = -18;
+  comp.ratio.value = 6;
+  comp.attack.value = 0.002;
+  comp.release.value = 0.4;
+  const out = ctx.createGain();
+  out.gain.value = 1.4;
+  shaper.connect(comp).connect(out).connect(master);
+
+  const noiseBuf = dur => {
+    const len = Math.floor(ctx.sampleRate * dur);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    // Brown-ish noise: deeper and rounder than plain hiss.
+    let last = 0;
+    for (let i = 0; i < len; i++) { last = (last + 0.04 * (Math.random() * 2 - 1)) / 1.04; d[i] = last * 3.5; }
+    return buf;
+  };
+  const layer = (dur, vol, from, to, at = 0) => {
+    const src = ctx.createBufferSource();
+    src.buffer = noiseBuf(dur);
+    const f = ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.setValueAtTime(from, t + at);
+    f.frequency.exponentialRampToValueAtTime(to, t + at + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t + at);
+    g.gain.exponentialRampToValueAtTime(vol, t + at + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + at + dur);
+    src.connect(f).connect(g).connect(shaper);
+    src.start(t + at);
+  };
+
+  // Thump: a pitch drop from 140 Hz down to 32 Hz.
+  const osc = ctx.createOscillator();
+  const og = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(140, t);
+  osc.frequency.exponentialRampToValueAtTime(32, t + 0.9);
+  og.gain.setValueAtTime(0.0001, t);
+  og.gain.exponentialRampToValueAtTime(1.0, t + 0.01);
+  og.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+  osc.connect(og).connect(shaper);
+  osc.start(t);
+  osc.stop(t + 1.2);
+
+  layer(1.2, 1.0, 900, 70);        // the blast
+  layer(2.2, 0.6, 260, 40, 0.08);  // the rumble that rolls on after
 }
 
 // C major pentatonic, so any run of notes sounds pleasant.
@@ -87,11 +129,10 @@ export const sfx = {
     }
   },
 
-  // A deep boom for a bomb.
+  // A deep boom for a bomb: a punchy low thump, a dark blast and a long rumble.
   boom() {
     if (!ready()) return;
-    noise({ dur: 0.7, vol: 0.7 });
-    tone(110, { dur: 0.5, type: 'sine', vol: 0.6, to: 35 });
+    boomFx();
   },
 
   // A happy flourish for clearing the board or solving a trick set.
