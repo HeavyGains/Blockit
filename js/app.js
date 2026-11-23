@@ -5,10 +5,11 @@ import {
   dealTrickTray, TRICK_CHANCE, TRICK_BONUS,
   applyGravity, scoreChain, MODES,
   addSpecials, resolveClear, specialPoints, colorOf, specialOf,
-} from './logic.js?v=11';
+} from './logic.js?v=12';
 
 const LIFT = 56;      // px the dragged piece floats above the finger, so it stays visible
 const CLEAR_MS = 220; // matches the pop animation in style.css
+const BLAST_MS = 560; // a clear with a bomb in it takes a little longer
 const FALL_MS = 260;  // matches the fall animation in style.css
 const CHAIN_PAUSE = 120; // beat between a landing and the next clear
 const wait = ms => new Promise(res => setTimeout(res, ms));
@@ -205,6 +206,7 @@ function showPop(piece, row, col, result) {
   else if (result.streak > 1) notes.push(`streak x${result.streak}`);
   if (result.bonus) notes.push('board clear!');
   if (result.specialNotes) notes.push(...result.specialNotes);
+  if (result.specialNotes?.includes('boom!')) el.classList.add('boom');
   if (notes.length) {
     const small = document.createElement('small');
     small.textContent = notes.join(' · ');
@@ -341,16 +343,82 @@ function placePiece(index, piece, row, col) {
 // crack. Returns what the specials did, for scoring.
 async function clearWithFlash(lines) {
   const res = resolveClear(board, lines);
+  const inLine = (r, c) => lines.rows.includes(r) || lines.cols.includes(c);
   for (const key of res.hit) {
     const [r, c] = key.split(',').map(Number);
-    if (specialOf(board[r][c]) === 'stone') cells[r * SIZE + c].classList.add('cracking');
-    else cells[r * SIZE + c].classList.add('clearing');
+    const el = cells[r * SIZE + c];
+    if (specialOf(board[r][c]) === 'stone') el.classList.add('cracking');
+    else if (res.bombs.length && !inLine(r, c)) {
+      if (board[r][c] !== null) el.classList.add('blasting');
+    } else el.classList.add('clearing');
   }
-  await wait(CLEAR_MS);
-  cells.forEach(el => el.classList.remove('clearing', 'cracking'));
+  if (res.bombs.length) explode(res);
+  await wait(res.bombs.length ? BLAST_MS : CLEAR_MS);
+  cells.forEach(el => el.classList.remove('clearing', 'cracking', 'blasting'));
   board = res.board;
   drawBoard();
   return res;
+}
+
+// ---------- Explosions ----------
+// Each bomb: a flash, a shock ring, sparks, and the blocks it destroys flying
+// outward as debris. The board shakes and Android phones buzz.
+
+function cellCenter(r, c) {
+  const el = cells[r * SIZE + c];
+  return { x: el.offsetLeft + el.offsetWidth / 2, y: el.offsetTop + el.offsetHeight / 2, size: el.offsetWidth };
+}
+
+function explode(res) {
+  boardEl.classList.remove('shake');
+  void boardEl.offsetWidth; // restart the shake if it was already running
+  boardEl.classList.add('shake');
+  setTimeout(() => boardEl.classList.remove('shake'), 450);
+  try { navigator.vibrate?.([70, 40, 120]); } catch { /* no vibration */ }
+  res.bombs.forEach(([br, bc], n) => setTimeout(() => blastAt(br, bc, res), n * 110));
+}
+
+function blastAt(br, bc, res) {
+  const { x, y, size } = cellCenter(br, bc);
+  const fx = document.createElement('div');
+  fx.className = 'blast';
+  fx.style.left = `${x}px`;
+  fx.style.top = `${y}px`;
+  fx.style.setProperty('--s', `${size}px`);
+  const flash = document.createElement('i');
+  flash.className = 'flash';
+  const ring = document.createElement('i');
+  ring.className = 'ring';
+  fx.append(flash, ring);
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * Math.PI * 2 + Math.random() * 0.4;
+    const d = size * (1.6 + Math.random() * 1.6);
+    const spark = document.createElement('i');
+    spark.className = 'spark';
+    spark.style.setProperty('--dx', `${Math.cos(a) * d}px`);
+    spark.style.setProperty('--dy', `${Math.sin(a) * d}px`);
+    fx.append(spark);
+  }
+  // Debris: the blocks around this bomb fly away from it, tumbling.
+  for (const key of res.hit) {
+    const [r, c] = key.split(',').map(Number);
+    if (Math.abs(r - br) > 1 || Math.abs(c - bc) > 1) continue;
+    const el = cells[r * SIZE + c];
+    if (!el.dataset.c || el.dataset.s === 'stone') continue;
+    const chunk = document.createElement('i');
+    chunk.className = 'debris';
+    chunk.style.background = getComputedStyle(el).getPropertyValue('--k');
+    const dx = (c - bc || (Math.random() - 0.5)) * size * (1.8 + Math.random());
+    const dy = (r - br || (Math.random() - 0.5)) * size * (1.8 + Math.random()) - size * 0.8;
+    chunk.style.setProperty('--x0', `${(c - bc) * size}px`);
+    chunk.style.setProperty('--y0', `${(r - br) * size}px`);
+    chunk.style.setProperty('--dx', `${dx}px`);
+    chunk.style.setProperty('--dy', `${dy}px`);
+    chunk.style.setProperty('--rot', `${(Math.random() - 0.5) * 720}deg`);
+    fx.append(chunk);
+  }
+  boardEl.appendChild(fx);
+  setTimeout(() => fx.remove(), 900);
 }
 
 // Add the points specials earned (bomb blasts, stars) to the last score result.
