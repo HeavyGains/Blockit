@@ -12,8 +12,8 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-  <link rel="stylesheet" href="css/style.css?v=17">
-  <link rel="stylesheet" href="css/styles.css?v=17">
+  <link rel="stylesheet" href="css/style.css?v=18">
+  <link rel="stylesheet" href="css/styles.css?v=18">
   <script>
     // Set the saved style before the page draws, so it doesn't flash.
     try {
@@ -65,6 +65,18 @@
     </div>
   </div>
 
+  <div id="players" class="overlay" hidden>
+    <div class="sheet">
+      <h2 id="players-title">Who's playing?</h2>
+      <div id="playerlist" class="modelist"></div>
+      <form id="nameform" class="nameform" autocomplete="off">
+        <input id="name" type="text" maxlength="12" placeholder="New player name" aria-label="Your name" enterkeyhint="done">
+        <button id="name-go" class="primary-btn" type="submit">Add</button>
+      </form>
+      <button id="players-close" class="text-btn" type="button">Close</button>
+    </div>
+  </div>
+
   <div id="modes" class="overlay" hidden>
     <div class="sheet">
       <h2>Game</h2>
@@ -81,7 +93,7 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=17"></script>
+  <script type="module" src="js/app.js?v=18"></script>
   <script>
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' });
   </script>
