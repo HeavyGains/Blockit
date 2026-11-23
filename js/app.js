@@ -5,8 +5,8 @@ import {
   dealTrickTray, TRICK_CHANCE, TRICK_BONUS,
   applyGravity, scoreChain, MODES,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=17';
-import { sfx, unlock, setSoundOn } from './sound.js?v=17';
+} from './logic.js?v=18';
+import { sfx, unlock, setSoundOn } from './sound.js?v=18';
 
 const LIFT = 56;      // px the dragged piece floats above the finger, so it stays visible
 const CLEAR_MS = 220; // matches the pop animation in style.css
@@ -34,7 +34,6 @@ let trickSet = false; // the tray in play is a trick set
 
 // ---------- Players and best scores (saved on this device) ----------
 
-const PLAYERS = ['Jason', 'Amy'];
 const store = {
   get(key, fallback) {
     try { const v = localStorage.getItem(key); return v === null ? fallback : JSON.parse(v); } catch { return fallback; }
@@ -43,7 +42,14 @@ const store = {
     try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* private mode: just don't save */ }
   },
 };
-let player = PLAYERS.includes(store.get('blockit.player')) ? store.get('blockit.player') : PLAYERS[0];
+// Players are added by name on this device. Phones that already had Jason and
+// Amy keep them; a new phone starts by asking for a name.
+const savedPlayer = store.get('blockit.player', null);
+const firstVisit = savedPlayer === null;
+let players = store.get('blockit.players', null);
+if (!Array.isArray(players) || !players.length) players = firstVisit ? [] : ['Jason', 'Amy'];
+if (typeof savedPlayer === 'string' && !players.includes(savedPlayer)) players.push(savedPlayer);
+let player = players.includes(savedPlayer) ? savedPlayer : (players[0] || 'Player');
 // ---------- Mode (saved on this device) ----------
 
 let mode = MODES.some(m => m.id === store.get('blockit.mode')) ? store.get('blockit.mode') : 'classic';
@@ -124,13 +130,88 @@ document.getElementById('palette').addEventListener('click', () => { stylesEl.hi
 document.getElementById('styles-close').addEventListener('click', () => { stylesEl.hidden = true; });
 stylesEl.addEventListener('click', e => { if (e.target === stylesEl) stylesEl.hidden = true; });
 
-document.getElementById('player').addEventListener('click', () => {
-  player = PLAYERS[(PLAYERS.indexOf(player) + 1) % PLAYERS.length];
+// ---------- Players sheet ----------
+// Tap the name at the top right to pick who's playing or add a new name.
+
+const playersEl = document.getElementById('players');
+const playerListEl = document.getElementById('playerlist');
+const nameForm = document.getElementById('nameform');
+const nameInput = document.getElementById('name');
+const NAME_MAX = 12;
+
+function choosePlayer(name) {
+  player = name;
   store.set('blockit.player', player);
+  store.set('blockit.players', players);
   applyStyle();
   newBest = false;
   saveBest();
   drawScore();
+  playersEl.hidden = true;
+}
+
+function drawPlayers() {
+  playerListEl.replaceChildren(...players.map(name => {
+    const row = document.createElement('div');
+    row.className = 'player-row';
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'mode-btn';
+    b.setAttribute('aria-pressed', String(name === player));
+    const n = document.createElement('b');
+    n.textContent = name;
+    const sub = document.createElement('span');
+    sub.textContent = `Best ${(bests[name] || 0).toLocaleString()}`;
+    b.append(n, sub);
+    b.addEventListener('click', () => choosePlayer(name));
+    row.append(b);
+    // Anyone but the one playing can be taken off the list (their bests stay saved).
+    if (name !== player) {
+      const x = document.createElement('button');
+      x.type = 'button';
+      x.className = 'remove-btn';
+      x.setAttribute('aria-label', `Remove ${name}`);
+      x.textContent = '✕';
+      x.addEventListener('click', () => {
+        players = players.filter(p => p !== name);
+        store.set('blockit.players', players);
+        drawPlayers();
+      });
+      row.append(x);
+    }
+    return row;
+  }));
+}
+
+function openPlayers(first = false) {
+  document.getElementById('players-title').textContent = first ? 'Enter your name' : "Who's playing?";
+  playerListEl.hidden = first;
+  document.getElementById('players-close').hidden = first;
+  nameInput.value = '';
+  nameInput.placeholder = first ? 'Your name' : 'New player name';
+  document.getElementById('name-go').textContent = first ? 'Play' : 'Add';
+  drawPlayers();
+  playersEl.hidden = false;
+  if (first) nameInput.focus();
+}
+
+nameForm.addEventListener('submit', e => {
+  e.preventDefault();
+  const name = nameInput.value.trim().replace(/\s+/g, ' ').slice(0, NAME_MAX);
+  if (!name) { nameInput.focus(); return; }
+  const same = players.find(p => p.toLowerCase() === name.toLowerCase());
+  if (!same) players.push(name);
+  nameInput.blur();
+  choosePlayer(same || name);
+});
+
+document.getElementById('player').addEventListener('click', () => {
+  if (busy || drag) return;
+  openPlayers();
+});
+document.getElementById('players-close').addEventListener('click', () => { playersEl.hidden = true; });
+playersEl.addEventListener('click', e => {
+  if (e.target === playersEl && !document.getElementById('players-close').hidden) playersEl.hidden = true;
 });
 
 // ---------- Drawing ----------
@@ -659,3 +740,4 @@ modesEl.addEventListener('click', e => { if (e.target === modesEl) modesEl.hidde
 
 applyStyle();
 if (loadGame()) draw(); else newGame();
+if (firstVisit) openPlayers(true);
