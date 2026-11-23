@@ -4,8 +4,8 @@ import {
   newScore, scorePlacement, boardEmpty,
   dealTrickTray, TRICK_CHANCE, TRICK_BONUS,
   applyGravity, scoreChain, MODES,
-  addSpecials, resolveClear, specialPoints, colorOf, specialOf,
-} from './logic.js?v=12';
+  addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, specialPoints, colorOf, specialOf,
+} from './logic.js?v=13';
 
 const LIFT = 56;      // px the dragged piece floats above the finger, so it stays visible
 const CLEAR_MS = 220; // matches the pop animation in style.css
@@ -231,10 +231,13 @@ function showSolved() {
   el.addEventListener('animationend', () => el.remove());
 }
 
+// Gravity also deals anchor and flip blocks.
+const withSpecials = t => addSpecials(t, Math.random, SPECIAL_CHANCE, gravity() ? GRAVITY_KINDS : SPECIAL_KINDS);
+
 // About 1 set in TRICK_CHANCE is a trick set when the board allows one.
 function dealNext() {
   // Trick sets are solved with Classic rules, so they only come in Classic.
-  if (specials) return addSpecials(dealTray(Math.random, board));
+  if (specials) return withSpecials(dealTray(Math.random, board));
   const trick = !gravity() && Math.random() < TRICK_CHANCE ? dealTrickTray(Math.random, board) : null;
   trickSet = !!trick;
   return trick || dealTray(Math.random, board);
@@ -536,7 +539,7 @@ function loadGame() {
 
 function newGame() {
   board = emptyBoard();
-  tray = specials ? addSpecials(dealTray()) : dealTray();
+  tray = specials ? withSpecials(dealTray()) : dealTray();
   trickSet = false;
   score = newScore();
   newBest = false;

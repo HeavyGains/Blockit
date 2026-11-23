@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   SIZE, PIECES, emptyBoard, place, fullLines, resolveClear, addSpecials,
-  specialPoints, colorOf, specialOf, applyGravity, STAR_BONUS, CLEAR_POINTS,
+  specialPoints, colorOf, specialOf, applyGravity, STAR_BONUS, CLEAR_POINTS, GRAVITY_KINDS,
 } from '../js/logic.js';
 
 const piece = id => PIECES.find(p => p.id === id);
@@ -88,4 +88,47 @@ test('special cells fall with gravity', () => {
   b[2][0] = { c: 1, s: 'star' };
   const { board } = applyGravity(b);
   assert.deepEqual(board[7][0], { c: 1, s: 'star' });
+});
+
+test('an anchor stays put and blocks above it rest on it', () => {
+  const b = emptyBoard();
+  b[4][0] = { c: 1, s: 'anchor' };
+  b[1][0] = 2;
+  b[6][0] = 3;
+  const { board, falls } = applyGravity(b);
+  assert.deepEqual(board[4][0], { c: 1, s: 'anchor' });
+  assert.equal(board[3][0], 2); // landed on the anchor
+  assert.equal(falls[3][0], 2);
+  assert.equal(board[7][0], 3); // below the anchor, falls to the floor
+  assert.equal(board[1][0], null);
+});
+
+test('a flip block makes its column fall up', () => {
+  const b = emptyBoard();
+  b[5][2] = 4;
+  b[7][2] = { c: 0, s: 'flip' };
+  b[6][3] = 1; // other columns still fall down
+  const { board, falls } = applyGravity(b);
+  assert.equal(board[0][2], 4);
+  assert.deepEqual(board[1][2], { c: 0, s: 'flip' });
+  assert.equal(falls[0][2], -5);
+  assert.equal(board[7][3], 1);
+});
+
+test('flip and anchor together: blocks fall up against the anchor', () => {
+  const b = emptyBoard();
+  b[2][1] = { c: 0, s: 'anchor' };
+  b[6][1] = { c: 2, s: 'flip' };
+  b[0][1] = 5; // above the anchor: rises to the top
+  b[1][1] = null;
+  const { board } = applyGravity(b);
+  assert.equal(board[0][1], 5);
+  assert.deepEqual(board[2][1], { c: 0, s: 'anchor' });
+  assert.deepEqual(board[3][1], { c: 2, s: 'flip' });
+});
+
+test('addSpecials can use the Gravity kinds', () => {
+  const tray = [piece('dot')];
+  const [p] = addSpecials(tray, () => 0.99999, 1, GRAVITY_KINDS);
+  assert.equal(p.special.s, 'flip');
 });

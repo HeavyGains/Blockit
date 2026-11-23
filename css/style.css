@@ -444,6 +444,8 @@ main {
 
 .cell[data-s="bomb"]::before { content: '💣'; }
 .cell[data-s="star"]::before { content: '⭐'; }
+.cell[data-s="anchor"]::before { content: '⚓'; }
+.cell[data-s="flip"]::before { content: '⬆️'; }
 
 /* Stone: grey in every style, whatever color the piece was. */
 .cell[data-c][data-s="stone"],
