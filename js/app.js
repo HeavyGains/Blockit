@@ -6,9 +6,9 @@ import {
   applyGravity, scoreChain, MODES,
   dayKey, dailyTray, shareText, shortDay,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=21';
-import { online, queueScore, fetchBoard } from './online.js?v=21';
-import { sfx, unlock, setSoundOn } from './sound.js?v=21';
+} from './logic.js?v=22';
+import { online, queueScore, fetchBoard } from './online.js?v=22';
+import { sfx, unlock, setSoundOn } from './sound.js?v=22';
 
 const LIFT = 56;      // px the dragged piece floats above the finger, so it stays visible
 const CLEAR_MS = 220; // matches the pop animation in style.css
