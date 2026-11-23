@@ -40,7 +40,11 @@ function buzz(pattern, taps = 1, gap = 70) {
 export const haptic = {
   pick: () => buzz(8),
   place: () => buzz(15),
-  clear: n => buzz(n > 1 ? [25, 40, 25] : 25, Math.min(n, 3)),
+  // A rolling run of taps: 5 for one line, 2 more per extra line (up to 9).
+  clear: n => {
+    const taps = Math.min(5 + (n - 1) * 2, 9);
+    buzz(Array.from({ length: taps * 2 - 1 }, (_, i) => (i % 2 ? 30 : 18)), taps, 50);
+  },
   combo: () => buzz([20, 30, 20, 30, 35], 3, 60),
   boom: () => buzz([70, 40, 120], 4, 55),
   fanfare: () => buzz([30, 50, 30, 50, 60], 3, 90),
