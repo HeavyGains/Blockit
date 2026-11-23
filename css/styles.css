@@ -829,7 +829,7 @@
 [data-style="thanksgiving"] {
   --bg: #3a2414;
   --board: #b8462a;
-  --empty: transparent;
+  --empty: rgba(50, 15, 0, 0.42);
   --text: #fff1dc;
   --muted: #d1b48d;
   --accent: #e08a2e;
@@ -850,20 +850,20 @@
     linear-gradient(#5a2e14, #2b170b);
 }
 
-/* Red-and-gold check tablecloth with a wooden edge... */
+/* Fine red-and-gold check tablecloth with a wooden edge. The check is small
+   and soft so it never lines up with the grid. */
 [data-style="thanksgiving"] .board {
   background:
-    repeating-linear-gradient(90deg, rgba(60, 10, 0, 0.28) 0 calc(var(--cell) / 2), transparent 0 var(--cell)),
-    repeating-linear-gradient(0deg, rgba(60, 10, 0, 0.28) 0 calc(var(--cell) / 2), transparent 0 var(--cell)),
-    repeating-linear-gradient(90deg, rgba(255, 200, 80, 0.18) 0 2px, transparent 0 calc(var(--cell) / 2)),
+    repeating-linear-gradient(90deg, rgba(60, 10, 0, 0.16) 0 5px, transparent 5px 10px),
+    repeating-linear-gradient(0deg, rgba(60, 10, 0, 0.16) 0 5px, transparent 5px 10px),
     #b8462a;
-  background-position: 4px 4px;
   box-shadow: 0 0 0 4px #7a4a26, 0 0 0 6px #4a2a14, 0 8px 20px rgba(0, 0, 0, 0.5);
 }
 
-/* ...set with a plate at every spot. Food sits on the plates. */
-[data-style="thanksgiving"] .board .cell {
-  background: radial-gradient(circle, #fffaf0 0 37%, #eadcc2 38% 40%, #fffaf0 41% 45%, rgba(60, 20, 0, 0.35) 46% 48%, transparent 49%);
+/* Open spots: dark, recessed squares with a light edge, easy to spot. */
+[data-style="thanksgiving"] .board .cell:not([data-c])::after {
+  border-radius: 5px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 220, 170, 0.35);
 }
 
 /* Apple with stem and leaf. */
