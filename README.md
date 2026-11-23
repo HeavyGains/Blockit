@@ -33,7 +33,9 @@ Special blocks: a switch in the Game sheet (tap the mode name). With it on,
 about 1 piece in 4 carries one special cell, in either mode. Bomb: when its line
 clears it also clears the 3x3 around it (and sets off other bombs there); each
 extra cell scores like a cleared cell. Stone: a clear only cracks it, a second
-clear breaks it. Star: +50 when cleared. Each mode with or without specials
+clear breaks it. Star: +50 when cleared. In Gravity two more turn up: Anchor ⚓ never
+falls, and blocks above it rest on it. Flip ⬆️ makes its whole column fall up
+instead of down while it's in that column. Each mode with or without specials
 keeps its own saved game and best (`blockit.game.classic-special`, etc.).
 
 ## Run it

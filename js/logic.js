@@ -270,17 +270,29 @@ export function dealTrickTray(rng = Math.random, board, tries = TRICK_TRIES) {
 // That can fill new lines, which clear and drop again: a chain reaction.
 
 // Returns { board, falls }: the board after dropping, and falls[r][c] = how
-// many rows the block now at (r, c) fell (0 if it didn't move or is empty).
+// many rows the block now at (r, c) moved: positive if it fell down, negative
+// if it fell up (0 if it didn't move or is empty).
+// Gravity specials: an anchor never moves, and blocks rest on it. A flip
+// block makes its whole column fall up instead of down.
 export function applyGravity(board) {
   const next = emptyBoard();
   const falls = Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
   for (let c = 0; c < SIZE; c++) {
-    let land = SIZE - 1; // next free row from the bottom
-    for (let r = SIZE - 1; r >= 0; r--) {
-      if (board[r][c] === null) continue;
-      next[land][c] = board[r][c];
-      falls[land][c] = land - r;
-      land--;
+    const up = board.some(line => specialOf(line[c]) === 'flip');
+    // Anchors split the column into stretches; each settles on its own.
+    let top = 0;
+    for (let r = 0; r <= SIZE; r++) {
+      const anchor = r < SIZE && specialOf(board[r][c]) === 'anchor';
+      if (r < SIZE && !anchor) continue;
+      if (anchor) next[r][c] = board[r][c];
+      const rows = [];
+      for (let y = top; y < r; y++) if (board[y][c] !== null) rows.push(y);
+      rows.forEach((y, i) => {
+        const land = up ? top + i : r - rows.length + i;
+        next[land][c] = board[y][c];
+        falls[land][c] = land - y;
+      });
+      top = r + 1;
     }
   }
   return { board: next, falls };
@@ -324,17 +336,19 @@ export const MODES = [
 
 export const SPECIAL_CHANCE = 0.25; // share of pieces that get a special cell
 export const SPECIAL_KINDS = [['bomb', 0.4], ['stone', 0.35], ['star', 0.25]];
+// Gravity adds anchor (never falls) and flip (its column falls up).
+export const GRAVITY_KINDS = [['bomb', 0.28], ['stone', 0.22], ['star', 0.18], ['anchor', 0.16], ['flip', 0.16]];
 export const STAR_BONUS = 50;
 
 export const colorOf = v => (v !== null && typeof v === 'object' ? v.c : v);
 export const specialOf = v => (v !== null && typeof v === 'object' ? v.s : null);
 
 // Give some pieces of a tray a special cell. Returns new piece objects.
-export function addSpecials(tray, rng = Math.random, chance = SPECIAL_CHANCE) {
+export function addSpecials(tray, rng = Math.random, chance = SPECIAL_CHANCE, kinds = SPECIAL_KINDS) {
   return tray.map(p => {
     if (!p || rng() >= chance) return p;
-    let roll = rng(), s = SPECIAL_KINDS[SPECIAL_KINDS.length - 1][0];
-    for (const [kind, w] of SPECIAL_KINDS) { if (roll < w) { s = kind; break; } roll -= w; }
+    let roll = rng(), s = kinds[kinds.length - 1][0];
+    for (const [kind, w] of kinds) { if (roll < w) { s = kind; break; } roll -= w; }
     return { ...p, special: { i: Math.floor(rng() * p.cells.length), s } };
   });
 }
