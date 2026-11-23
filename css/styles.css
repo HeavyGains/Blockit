@@ -704,3 +704,210 @@
   [data-style="snowfall"] .board::before,
   [data-style="gift"] .board::after { animation: none; }
 }
+
+/* ---------- Shaped-piece styles share this: each color is a little object,
+   cut out with clip-path (empty cells stay square). --deco paints details. */
+
+[data-style="halloween"] .cell[data-c]::after,
+[data-style="thanksgiving"] .cell[data-c]::after {
+  inset: 1px;
+  border-radius: 0;
+  background: var(--deco, none), var(--k);
+  box-shadow: none;
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.35));
+}
+
+[data-style="halloween"] .cell[data-s="stone"]::after,
+[data-style="halloween"] .cell[data-s="crack"]::after,
+[data-style="thanksgiving"] .cell[data-s="stone"]::after,
+[data-style="thanksgiving"] .cell[data-s="crack"]::after { clip-path: none; --deco: none; border-radius: 4px; }
+
+/* ---------- Halloween ---------- */
+
+[data-style="halloween"] {
+  --bg: #150c1f;
+  --board: #22143a;
+  --empty: rgba(160, 120, 255, 0.07);
+  --text: #f6eefc;
+  --muted: #a993c4;
+  --accent: #ff8a1f;
+  --glow: rgba(255, 150, 40, 0.9);
+  /* pumpkin, candy corn, slime, ghost, witch hat, bat */
+  --c0: #f07a1a;
+  --c1: #ffc93c;
+  --c2: #7bd64a;
+  --c3: #f2eef8;
+  --c4: #7b4bc4;
+  --c5: #8a7aa8;
+  --ink: #1a0f24;
+}
+
+/* Night board with a big pale moon behind the grid. */
+[data-style="halloween"] .board {
+  background:
+    radial-gradient(circle at 78% 18%, rgba(255, 240, 200, 0.16) 0 14%, rgba(255, 240, 200, 0.05) 15% 22%, transparent 23%),
+    radial-gradient(ellipse 120% 40% at 50% 110%, rgba(123, 214, 74, 0.12), transparent 70%),
+    var(--board);
+  box-shadow: 0 0 0 3px #3a2366, 0 0 26px rgba(255, 138, 31, 0.18);
+}
+
+/* Jack-o'-lantern: stem, ribs, triangle-ish eyes and a grin. */
+[data-style="halloween"] .cell[data-c="0"]::after {
+  clip-path: polygon(44% 0, 58% 0, 57% 12%, 74% 13%, 91% 23%, 100% 46%, 96% 74%, 81% 93%, 60% 100%, 40% 100%, 19% 93%, 4% 74%, 0 46%, 9% 23%, 26% 13%, 43% 12%);
+  --deco:
+    linear-gradient(#3f7a2a 0 13%, transparent 13%),
+    conic-gradient(from 135deg at 34% 36%, var(--ink) 0 90deg, transparent 90deg) 0 0 / 100% 46% no-repeat,
+    conic-gradient(from 135deg at 66% 36%, var(--ink) 0 90deg, transparent 90deg) 0 0 / 100% 46% no-repeat,
+    radial-gradient(ellipse 30% 13% at 50% 58%, var(--k) 95%, transparent),
+    radial-gradient(ellipse 32% 18% at 50% 64%, var(--ink) 95%, transparent),
+    linear-gradient(90deg, transparent 30%, rgba(120, 50, 0, 0.3) 30% 33%, transparent 33% 67%, rgba(120, 50, 0, 0.3) 67% 70%, transparent 70%);
+}
+
+/* Candy corn: white tip, orange middle, yellow base. */
+[data-style="halloween"] .cell[data-c="1"]::after {
+  clip-path: polygon(50% 2%, 62% 12%, 94% 90%, 88% 98%, 12% 98%, 6% 90%, 38% 12%);
+  --deco: linear-gradient(#fff8e8 0 32%, #f07a1a 32% 66%, transparent 66%);
+}
+
+/* Slime blob with two eyes. */
+[data-style="halloween"] .cell[data-c="2"]::after {
+  clip-path: polygon(30% 14%, 50% 4%, 72% 12%, 86% 30%, 92% 54%, 100% 78%, 88% 96%, 70% 90%, 56% 100%, 40% 92%, 22% 100%, 6% 88%, 4% 64%, 10% 36%);
+  --deco:
+    radial-gradient(circle at 38% 44%, var(--ink) 5%, transparent 6%),
+    radial-gradient(circle at 62% 44%, var(--ink) 5%, transparent 6%),
+    radial-gradient(circle at 38% 44%, #fff 11%, transparent 12%),
+    radial-gradient(circle at 62% 44%, #fff 11%, transparent 12%),
+    radial-gradient(ellipse 18% 12% at 30% 22%, rgba(255, 255, 255, 0.45), transparent);
+}
+
+/* Ghost with a wavy hem. */
+[data-style="halloween"] .cell[data-c="3"]::after {
+  clip-path: polygon(50% 2%, 72% 7%, 86% 22%, 92% 46%, 92% 98%, 78% 86%, 64% 98%, 50% 86%, 36% 98%, 22% 86%, 8% 98%, 8% 46%, 14% 22%, 28% 7%);
+  --deco:
+    radial-gradient(ellipse 7% 10% at 38% 38%, var(--ink) 95%, transparent),
+    radial-gradient(ellipse 7% 10% at 62% 38%, var(--ink) 95%, transparent),
+    radial-gradient(ellipse 9% 7% at 50% 58%, var(--ink) 95%, transparent);
+}
+
+/* Witch hat with an orange band. */
+[data-style="halloween"] .cell[data-c="4"]::after {
+  clip-path: polygon(46% 2%, 62% 10%, 66% 64%, 98% 78%, 98% 92%, 2% 92%, 2% 78%, 34% 64%);
+  --deco: linear-gradient(transparent 56%, #ff8a1f 56% 68%, transparent 68%);
+}
+
+/* Bat with glowing eyes. */
+[data-style="halloween"] .cell[data-c="5"]::after {
+  clip-path: polygon(50% 30%, 56% 16%, 61% 30%, 76% 20%, 100% 26%, 92% 46%, 86% 66%, 72% 58%, 62% 72%, 50% 84%, 38% 72%, 28% 58%, 14% 66%, 8% 46%, 0 26%, 24% 20%, 39% 30%, 44% 16%);
+  --deco:
+    radial-gradient(circle at 44% 42%, #ffd83c 4%, transparent 5%),
+    radial-gradient(circle at 56% 42%, #ffd83c 4%, transparent 5%);
+}
+
+/* Clear: a puff of green smoke. */
+[data-style="halloween"] .cell.clearing::after {
+  clip-path: none;
+  background: radial-gradient(circle, rgba(200, 255, 160, 0.95), rgba(123, 214, 74, 0.6) 45%, transparent 70%);
+  animation: haunt 220ms ease-out forwards;
+}
+
+@keyframes haunt { to { transform: translateY(-30%) scale(1.6); filter: blur(3px); opacity: 0; } }
+
+[data-style="halloween"] .score { text-shadow: 0 0 12px rgba(255, 138, 31, 0.7); }
+[data-style="halloween"] .pop { text-shadow: 0 0 8px #ff8a1f, 0 2px 4px #000; }
+[data-style="halloween"] .streak { background: #ff8a1f; color: var(--ink); }
+[data-style="halloween"] .sheet { background: #1e1233; box-shadow: 0 0 0 2px #ff8a1f; }
+[data-style="halloween"] .logo i { color: var(--ink); text-shadow: none; }
+
+/* ---------- Thanksgiving ---------- */
+
+[data-style="thanksgiving"] {
+  --bg: #3a2414;
+  --board: #e9d8b4;
+  --empty: rgba(120, 70, 30, 0.1);
+  --text: #fff1dc;
+  --muted: #d1b48d;
+  --accent: #e08a2e;
+  --glow: rgba(255, 190, 90, 0.9);
+  /* apple, pumpkin pie, pear, drumstick, cranberries, corn */
+  --c0: #d23b2e;
+  --c1: #e08a2e;
+  --c2: #a8c23e;
+  --c3: #a5602f;
+  --c4: #a3203f;
+  --c5: #f2c94c;
+}
+
+/* A plaid tablecloth with a wooden edge. */
+[data-style="thanksgiving"] .board {
+  background:
+    repeating-linear-gradient(90deg, rgba(180, 60, 30, 0.14) 0 6px, transparent 6px 22px),
+    repeating-linear-gradient(0deg, rgba(180, 60, 30, 0.14) 0 6px, transparent 6px 22px),
+    var(--board);
+  box-shadow: 0 0 0 4px #7a4a26, 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+/* Apple with stem and leaf. */
+[data-style="thanksgiving"] .cell[data-c="0"]::after {
+  clip-path: polygon(46% 0, 54% 0, 54% 16%, 66% 12%, 84% 16%, 96% 34%, 96% 60%, 86% 84%, 70% 98%, 58% 94%, 50% 98%, 42% 94%, 30% 98%, 14% 84%, 4% 60%, 4% 34%, 16% 16%, 34% 12%, 46% 16%);
+  --deco:
+    linear-gradient(90deg, transparent 46%, #5a3418 46% 54%, transparent 54%) 0 0 / 100% 18% no-repeat,
+    radial-gradient(ellipse 14% 8% at 30% 34%, rgba(255, 255, 255, 0.45), transparent);
+}
+
+/* Pumpkin pie slice with a crust edge and a dab of cream. */
+[data-style="thanksgiving"] .cell[data-c="1"]::after {
+  clip-path: polygon(50% 6%, 98% 92%, 2% 92%);
+  --deco:
+    radial-gradient(ellipse 14% 9% at 50% 54%, #fffaf0 95%, transparent),
+    linear-gradient(transparent 78%, #c9933f 78%);
+}
+
+/* Pear. */
+[data-style="thanksgiving"] .cell[data-c="2"]::after {
+  clip-path: polygon(47% 0, 53% 0, 54% 10%, 64% 16%, 68% 34%, 84% 52%, 90% 72%, 80% 92%, 62% 100%, 38% 100%, 20% 92%, 10% 72%, 16% 52%, 32% 34%, 36% 16%, 46% 10%);
+  --deco:
+    linear-gradient(90deg, transparent 46%, #5a3418 46% 54%, transparent 54%) 0 0 / 100% 12% no-repeat,
+    radial-gradient(ellipse 10% 14% at 36% 62%, rgba(255, 255, 255, 0.35), transparent);
+}
+
+/* Roast drumstick with a white bone end. */
+[data-style="thanksgiving"] .cell[data-c="3"]::after {
+  clip-path: polygon(14% 34%, 30% 10%, 54% 4%, 76% 14%, 84% 36%, 76% 58%, 76% 66%, 86% 68%, 98% 78%, 92% 88%, 88% 100%, 76% 96%, 70% 86%, 64% 76%, 46% 74%, 26% 68%, 12% 54%);
+  --deco:
+    linear-gradient(135deg, transparent 66%, #fff6e6 66%),
+    radial-gradient(ellipse 22% 12% at 40% 26%, rgba(255, 220, 160, 0.4), transparent);
+}
+
+/* A little pile of cranberries. */
+[data-style="thanksgiving"] .cell[data-c="4"]::after {
+  clip-path: polygon(30% 6%, 50% 10%, 70% 6%, 92% 22%, 98% 50%, 92% 78%, 72% 96%, 50% 92%, 28% 96%, 8% 78%, 2% 50%, 8% 22%);
+  --deco:
+    radial-gradient(circle at 30% 30%, #e0405f 18%, transparent 19%),
+    radial-gradient(circle at 70% 30%, #c42c4e 18%, transparent 19%),
+    radial-gradient(circle at 50% 50%, #e0405f 18%, transparent 19%),
+    radial-gradient(circle at 30% 70%, #c42c4e 18%, transparent 19%),
+    radial-gradient(circle at 70% 70%, #e0405f 18%, transparent 19%),
+    radial-gradient(circle at 27% 26%, #ff9fb3 4%, transparent 5%),
+    radial-gradient(circle at 67% 26%, #ff9fb3 4%, transparent 5%);
+}
+
+/* Corn on the cob: kernels and green husk leaves at the bottom. */
+[data-style="thanksgiving"] .cell[data-c="5"]::after {
+  clip-path: polygon(50% 0, 66% 8%, 72% 30%, 72% 70%, 90% 60%, 82% 100%, 18% 100%, 10% 60%, 28% 70%, 28% 30%, 34% 8%);
+  --deco:
+    linear-gradient(transparent 64%, #6ea33a 64%),
+    radial-gradient(circle, #ffe38a 30%, transparent 34%) 0 0 / 20% 12%;
+}
+
+/* Clear: crumbs fly. */
+[data-style="thanksgiving"] .cell.clearing::after {
+  clip-path: none;
+  background: radial-gradient(circle, #fff1c8, #e08a2e 55%, transparent 70%);
+  animation: crumb 220ms ease-out forwards;
+}
+
+@keyframes crumb { to { transform: scale(1.6) rotate(20deg); opacity: 0; } }
+
+[data-style="thanksgiving"] .pop { color: #fff1dc; text-shadow: 0 2px 0 #7a4a26, 0 0 6px #7a4a26; }
+[data-style="thanksgiving"] .streak { background: #d23b2e; color: #fff1dc; }
+[data-style="thanksgiving"] .sheet { background: #4a2e1a; }
