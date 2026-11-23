@@ -1,0 +1,33 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { dayKey, seededRng, dailyTray, shareText, emptyBoard, SIZE } from '../js/logic.js';
+
+const ids = tray => tray.map(p => `${p.id}:${p.color}`).join(' ');
+
+test('dayKey is the local date', () => {
+  assert.equal(dayKey(new Date(2026, 10, 22, 23, 59)), '2026-11-22');
+  assert.equal(dayKey(new Date(2026, 0, 5)), '2026-01-05');
+});
+
+test('seeded rng repeats for the same seed and differs for another', () => {
+  const a = seededRng('x'), b = seededRng('x'), c = seededRng('y');
+  const ra = [a(), a(), a()], rb = [b(), b(), b()], rc = [c(), c(), c()];
+  assert.deepEqual(ra, rb);
+  assert.notDeepEqual(ra, rc);
+  assert.ok(ra.every(v => v >= 0 && v < 1));
+});
+
+test('everyone gets the same sets on the same day, whatever their board', () => {
+  const day = '2026-11-22';
+  const busy = emptyBoard();
+  for (let c = 0; c < SIZE; c += 2) busy[4][c] = 0; // a different, still roomy board
+  for (let n = 0; n < 5; n++) {
+    assert.equal(ids(dailyTray(day, n)), ids(dailyTray(day, n, busy)));
+  }
+  assert.notEqual(ids(dailyTray(day, 0)), ids(dailyTray('2026-11-23', 0)));
+  assert.notEqual(ids(dailyTray(day, 0)), ids(dailyTray(day, 1)));
+});
+
+test('share text', () => {
+  assert.equal(shareText('2026-11-22', 4210, 'Jason'), 'Blockit Daily Duel 11/22: 4,210 (Jason)');
+});

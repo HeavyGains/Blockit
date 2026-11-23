@@ -38,6 +38,13 @@ falls, and blocks above it rest on it. Flip ⬆️ makes its whole column fall u
 instead of down while it's in that column, starting the moment it lands. Each mode with or without specials
 keeps its own saved game and best (`blockit.game.classic-special`, etc.).
 
+Daily Duel: the third mode. Everyone gets the same pieces on the same day
+(each set is seeded by the phone's date and the set number, so it doesn't
+depend on how you play). Classic rules, no specials or tricky sets. One try per
+player per day; at the end, Share score sends e.g. "Blockit Daily Duel 11/22:
+4,210 (Jason)" (or copies it). Today's scores on the phone are in
+`blockit.daily`, and players on the same phone see each other's on the result.
+
 ## Run it
 
     npm run dev     # http://localhost:5173

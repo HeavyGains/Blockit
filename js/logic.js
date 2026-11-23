@@ -330,6 +330,7 @@ export function playGravityMove(board, piece, row, col) {
 export const MODES = [
   { id: 'classic', name: 'Classic', about: 'Fill rows and columns to clear them.' },
   { id: 'gravity', name: 'Gravity', about: 'After a clear, blocks fall down. Set off chain reactions!' },
+  { id: 'daily', name: 'Daily Duel', about: 'Same pieces for everyone today. One try each. Compare scores!' },
 ];
 
 // ---------- Special blocks ----------
@@ -407,4 +408,44 @@ export function resolveClear(board, { rows, cols }) {
 // Extra points from specials in one clear, on top of the normal clear points.
 export function specialPoints({ blast, stars }, streak = 1) {
   return blast * CLEAR_POINTS * Math.max(streak, 1) + stars * STAR_BONUS;
+}
+
+// ---------- Daily Duel ----------
+// Everyone gets the same pieces on the same day: each set is drawn from a
+// random number generator seeded with the date and the set's number, so it
+// doesn't depend on how anyone played. Classic rules, no specials.
+
+// Today's date on this phone as 'YYYY-MM-DD'.
+export function dayKey(date = new Date()) {
+  const p = n => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}`;
+}
+
+// A repeatable rng (mulberry32) from a text seed (FNV-1a hash).
+export function seededRng(text) {
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
+  let a = h >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Set number n (0, 1, 2...) of the day. With a board, a set where nothing fits
+// is rerolled like any other deal, which only matters when the game would end.
+export function dailyTray(day, n, board = null) {
+  return dealTray(seededRng(`blockit-${day}-${n}`), board);
+}
+
+// '11/22' from '2026-11-22'.
+export function shortDay(day) {
+  const [, m, d] = day.split('-').map(Number);
+  return `${m}/${d}`;
+}
+
+export function shareText(day, score, player) {
+  return `Blockit Daily Duel ${shortDay(day)}: ${score.toLocaleString('en-US')} (${player})`;
 }
