@@ -1,7 +1,7 @@
 // Online scoreboard: sends scores to a small Supabase table and reads the
 // best per player and mode back. Scores wait in an outbox (saved on the phone)
 // until they're sent, so playing offline loses nothing.
-import { ONLINE } from './config.js?v=21';
+import { ONLINE } from './config.js?v=22';
 
 export const online = () => Boolean(ONLINE.url && ONLINE.key);
 
@@ -10,7 +10,10 @@ const read = () => { try { return JSON.parse(localStorage.getItem(OUTBOX)) || []
 const write = list => { try { localStorage.setItem(OUTBOX, JSON.stringify(list)); } catch { /* full or private */ } };
 
 function headers(extra = {}) {
-  return { apikey: ONLINE.key, Authorization: `Bearer ${ONLINE.key}`, 'Content-Type': 'application/json', ...extra };
+  // New publishable keys (sb_publishable_...) go in the apikey header only;
+  // an old anon key is a JWT and is also sent as the bearer token.
+  const auth = ONLINE.key.startsWith('eyJ') ? { Authorization: `Bearer ${ONLINE.key}` } : {};
+  return { apikey: ONLINE.key, ...auth, 'Content-Type': 'application/json', ...extra };
 }
 
 // Queue a score: { player, mode, score, day? }. Only the highest waiting
