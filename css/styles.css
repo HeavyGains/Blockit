@@ -678,7 +678,7 @@
 
 /* Specials sit on top of the cookie; keep stone and crack readable. */
 [data-style="gift"] .cell[data-s="stone"]::after,
-[data-style="gift"] .cell[data-s="crack"]::after { clip-path: none; --deco: none; border-radius: 4px; }
+[data-style="gift"] .cell[data-s="crack"]::after { clip-path: none; --deco: none; background: var(--k); border-radius: 4px; }
 
 /* Clear: the cookie crumbles in a burst of sugar. */
 [data-style="gift"] .cell.clearing::after {
@@ -709,7 +709,9 @@
    cut out with clip-path (empty cells stay square). --deco paints details. */
 
 [data-style="halloween"] .cell[data-c]::after,
-[data-style="thanksgiving"] .cell[data-c]::after {
+[data-style="thanksgiving"] .cell[data-c]::after,
+[data-style="fall"] .cell[data-c]::after,
+[data-style="spring"] .cell[data-c]::after {
   inset: 1px;
   border-radius: 0;
   background: var(--deco, none), var(--k);
@@ -717,10 +719,14 @@
   filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.35));
 }
 
-[data-style="halloween"] .cell[data-s="stone"]::after,
-[data-style="halloween"] .cell[data-s="crack"]::after,
-[data-style="thanksgiving"] .cell[data-s="stone"]::after,
-[data-style="thanksgiving"] .cell[data-s="crack"]::after { clip-path: none; --deco: none; border-radius: 4px; }
+[data-style="halloween"] .cell[data-c][data-s="stone"]::after,
+[data-style="halloween"] .cell[data-c][data-s="crack"]::after,
+[data-style="thanksgiving"] .cell[data-c][data-s="stone"]::after,
+[data-style="thanksgiving"] .cell[data-c][data-s="crack"]::after,
+[data-style="fall"] .cell[data-c][data-s="stone"]::after,
+[data-style="fall"] .cell[data-c][data-s="crack"]::after,
+[data-style="spring"] .cell[data-c][data-s="stone"]::after,
+[data-style="spring"] .cell[data-c][data-s="crack"]::after { clip-path: none; --deco: none; background: var(--k); border-radius: 4px; }
 
 /* ---------- Halloween ---------- */
 
@@ -931,3 +937,200 @@
 [data-style="thanksgiving"] .pop { color: #fff1dc; text-shadow: 0 2px 0 #7a4a26, 0 0 6px #7a4a26; }
 [data-style="thanksgiving"] .streak { background: #d23b2e; color: #fff1dc; }
 [data-style="thanksgiving"] .sheet { background: #4a2e1a; }
+
+/* ---------- Fall ---------- */
+
+[data-style="fall"] {
+  --bg: #2a1a12;
+  --board: #33261c;
+  --empty: rgba(255, 225, 180, 0.12);
+  --text: #fff0dc;
+  --muted: #d0aa82;
+  --accent: #ef7f22;
+  --glow: rgba(255, 190, 90, 0.9);
+  /* maple, birch, oak, acorn, elm, mushroom */
+  --c0: #d8352a;
+  --c1: #f2c230;
+  --c2: #ef7f22;
+  --c3: #b57a44;
+  --c4: #9fbf3a;
+  --c5: #b03a5b;
+  --vein: rgba(80, 30, 0, 0.45);
+}
+
+/* Sunset sky behind a dark bark board. */
+[data-style="fall"] body {
+  background: linear-gradient(#a8471f, #5a2a16 40%, var(--bg) 75%);
+}
+
+[data-style="fall"] .board {
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.12) 0 2px, transparent 2px 13px),
+    var(--board);
+  box-shadow: 0 0 0 3px #6b4022, 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+[data-style="fall"] .board .cell:not([data-c])::after { border-radius: 5px; }
+
+/* Maple leaf. */
+[data-style="fall"] .cell[data-c="0"]::after {
+  clip-path: polygon(50% 0, 60% 18%, 72% 12%, 70% 30%, 90% 22%, 84% 40%, 100% 44%, 82% 58%, 88% 70%, 64% 66%, 54% 76%, 54% 100%, 46% 100%, 46% 76%, 36% 66%, 12% 70%, 18% 58%, 0 44%, 16% 40%, 10% 22%, 30% 30%, 28% 12%, 40% 18%);
+  --deco: linear-gradient(90deg, transparent 48%, var(--vein) 48% 52%, transparent 52%);
+}
+
+/* Round birch leaf. */
+[data-style="fall"] .cell[data-c="1"]::after {
+  clip-path: polygon(50% 0, 72% 14%, 88% 38%, 86% 64%, 66% 84%, 54% 88%, 52% 100%, 48% 100%, 46% 88%, 34% 84%, 14% 64%, 12% 38%, 28% 14%);
+  --deco:
+    linear-gradient(90deg, transparent 48%, var(--vein) 48% 52%, transparent 52%),
+    linear-gradient(35deg, transparent 49%, var(--vein) 49% 51%, transparent 51%) 50% 40% / 40% 30% no-repeat,
+    linear-gradient(-35deg, transparent 49%, var(--vein) 49% 51%, transparent 51%) 10% 40% / 40% 30% no-repeat;
+}
+
+/* Oak leaf with rounded lobes. */
+[data-style="fall"] .cell[data-c="2"]::after {
+  clip-path: polygon(50% 0, 62% 8%, 58% 18%, 76% 20%, 70% 34%, 88% 40%, 76% 52%, 90% 62%, 70% 70%, 60% 82%, 54% 84%, 52% 100%, 48% 100%, 46% 84%, 40% 82%, 30% 70%, 10% 62%, 24% 52%, 12% 40%, 30% 34%, 24% 20%, 42% 18%, 38% 8%);
+  --deco: linear-gradient(90deg, transparent 48%, var(--vein) 48% 52%, transparent 52%);
+}
+
+/* Acorn with a textured cap. */
+[data-style="fall"] .cell[data-c="3"]::after {
+  clip-path: polygon(47% 0, 53% 0, 54% 10%, 80% 14%, 94% 28%, 90% 40%, 84% 42%, 82% 66%, 70% 86%, 50% 100%, 30% 86%, 18% 66%, 16% 42%, 10% 40%, 6% 28%, 20% 14%, 46% 10%);
+  --deco:
+    repeating-linear-gradient(45deg, rgba(255, 220, 160, 0.25) 0 2px, transparent 2px 5px) 0 0 / 100% 42% no-repeat,
+    linear-gradient(#6b3f1f 0 42%, transparent 42%),
+    radial-gradient(ellipse 12% 16% at 36% 62%, rgba(255, 255, 255, 0.3), transparent);
+}
+
+/* Slim elm leaf. */
+[data-style="fall"] .cell[data-c="4"]::after {
+  clip-path: polygon(50% 0, 64% 12%, 74% 30%, 76% 52%, 68% 72%, 54% 86%, 52% 100%, 48% 100%, 46% 86%, 32% 72%, 24% 52%, 26% 30%, 36% 12%);
+  --deco: linear-gradient(90deg, transparent 48%, var(--vein) 48% 52%, transparent 52%);
+}
+
+/* Toadstool: spotted cap, cream stem. */
+[data-style="fall"] .cell[data-c="5"]::after {
+  clip-path: polygon(50% 4%, 72% 8%, 90% 22%, 98% 42%, 96% 52%, 64% 54%, 66% 92%, 60% 98%, 40% 98%, 34% 92%, 36% 54%, 4% 52%, 2% 42%, 10% 22%, 28% 8%);
+  --deco:
+    radial-gradient(circle at 34% 24%, #fff4e0 7%, transparent 8%),
+    radial-gradient(circle at 62% 18%, #fff4e0 6%, transparent 7%),
+    radial-gradient(circle at 78% 38%, #fff4e0 5%, transparent 6%),
+    radial-gradient(circle at 20% 42%, #fff4e0 5%, transparent 6%),
+    linear-gradient(transparent 53%, #f1e2c6 53%);
+}
+
+/* Clear: the leaf twirls away. */
+[data-style="fall"] .cell.clearing::after {
+  animation: twirl 220ms ease-in forwards;
+}
+
+@keyframes twirl { to { transform: translate(30%, 40%) rotate(160deg) scale(0.6); opacity: 0; } }
+
+[data-style="fall"] .pop { text-shadow: 0 0 8px #ef7f22, 0 2px 4px #000; }
+[data-style="fall"] .streak { background: #ef7f22; color: #2a1a12; }
+[data-style="fall"] .sheet { background: #3a2a1e; }
+
+/* ---------- Spring ---------- */
+
+[data-style="spring"] {
+  --bg: #1f4128;
+  --board: #2c5a33;
+  --empty: rgba(255, 255, 255, 0.13);
+  --text: #f4fbef;
+  --muted: #b8d8b0;
+  --accent: #ff8fc0;
+  --glow: rgba(255, 240, 160, 0.9);
+  /* tulip, daisy, sprout, butterfly, violet, ladybug */
+  --c0: #ff6fa5;
+  --c1: #ffd83a;
+  --c2: #a8e45c;
+  --c3: #5cb8ff;
+  --c4: #b07cf0;
+  --c5: #e8342c;
+}
+
+/* Soft spring sky behind a meadow board. */
+[data-style="spring"] body {
+  background: linear-gradient(#5f9fc8, #3c7a5a 35%, var(--bg) 70%);
+}
+
+[data-style="spring"] .board {
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.07) 1px, transparent 1.6px) 0 0 / 9px 9px,
+    var(--board);
+  box-shadow: 0 0 0 3px #8fcf6a, 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+[data-style="spring"] .board .cell:not([data-c])::after { border-radius: 6px; }
+
+/* Tulip on a stem. */
+[data-style="spring"] .cell[data-c="0"]::after {
+  clip-path: polygon(20% 8%, 35% 22%, 50% 4%, 65% 22%, 80% 8%, 84% 40%, 74% 62%, 54% 70%, 54% 100%, 46% 100%, 46% 70%, 26% 62%, 16% 40%);
+  --deco: linear-gradient(transparent 68%, #3f9a3a 68%);
+}
+
+/* Daisy-style flower: five petals round an orange middle. Drawn, not cut. */
+[data-style="spring"] .cell[data-c="1"]::after,
+[data-style="spring"] .cell[data-c="4"]::after { background: var(--deco); }
+
+[data-style="spring"] .cell[data-c="1"]::after {
+  --deco:
+    radial-gradient(circle at 50% 52%, #f08a1a 15%, transparent 16%),
+    radial-gradient(circle at 50% 52%, var(--k) 24%, transparent 25%),
+    radial-gradient(circle at 50% 22%, var(--k) 19%, transparent 20%),
+    radial-gradient(circle at 79% 42%, var(--k) 19%, transparent 20%),
+    radial-gradient(circle at 68% 77%, var(--k) 19%, transparent 20%),
+    radial-gradient(circle at 32% 77%, var(--k) 19%, transparent 20%),
+    radial-gradient(circle at 21% 42%, var(--k) 19%, transparent 20%);
+}
+
+/* Violet: four petals and a white eye. */
+[data-style="spring"] .cell[data-c="4"]::after {
+  --deco:
+    radial-gradient(circle at 50% 50%, #fff6c8 11%, transparent 12%),
+    radial-gradient(circle at 50% 50%, var(--k) 22%, transparent 23%),
+    radial-gradient(circle at 50% 24%, var(--k) 23%, transparent 24%),
+    radial-gradient(circle at 76% 50%, var(--k) 23%, transparent 24%),
+    radial-gradient(circle at 50% 76%, var(--k) 23%, transparent 24%),
+    radial-gradient(circle at 24% 50%, var(--k) 23%, transparent 24%);
+}
+
+/* Sprout: two leaves on a stem. */
+[data-style="spring"] .cell[data-c="2"]::after {
+  clip-path: polygon(46% 100%, 46% 52%, 28% 48%, 10% 34%, 2% 14%, 24% 14%, 40% 24%, 47% 40%, 52% 34%, 60% 16%, 80% 4%, 98% 6%, 92% 28%, 74% 42%, 54% 48%, 54% 100%);
+  --deco: radial-gradient(ellipse 20% 10% at 30% 26%, rgba(255, 255, 255, 0.35), transparent);
+}
+
+/* Butterfly with spotted wings. */
+[data-style="spring"] .cell[data-c="3"]::after {
+  clip-path: polygon(50% 26%, 62% 10%, 86% 4%, 98% 20%, 90% 42%, 74% 52%, 92% 70%, 84% 92%, 62% 88%, 52% 70%, 50% 92%, 48% 70%, 38% 88%, 16% 92%, 8% 70%, 26% 52%, 10% 42%, 2% 20%, 14% 4%, 38% 10%);
+  --deco:
+    linear-gradient(90deg, transparent 46%, #23314a 46% 54%, transparent 54%),
+    radial-gradient(circle at 26% 26%, #fff 7%, transparent 8%),
+    radial-gradient(circle at 74% 26%, #fff 7%, transparent 8%),
+    radial-gradient(circle at 28% 72%, #ffd83a 6%, transparent 7%),
+    radial-gradient(circle at 72% 72%, #ffd83a 6%, transparent 7%);
+}
+
+/* Ladybug. */
+[data-style="spring"] .cell[data-c="5"]::after {
+  clip-path: circle(46% at 50% 54%);
+  --deco:
+    radial-gradient(ellipse 30% 20% at 50% 10%, #1b1b1b 95%, transparent),
+    linear-gradient(90deg, transparent 48.5%, #1b1b1b 48.5% 51.5%, transparent 51.5%),
+    radial-gradient(circle at 32% 46%, #1b1b1b 7%, transparent 8%),
+    radial-gradient(circle at 68% 46%, #1b1b1b 7%, transparent 8%),
+    radial-gradient(circle at 30% 72%, #1b1b1b 6%, transparent 7%),
+    radial-gradient(circle at 70% 72%, #1b1b1b 6%, transparent 7%);
+}
+
+/* Clear: petals burst open. */
+[data-style="spring"] .cell.clearing::after {
+  clip-path: none;
+  background: radial-gradient(circle, #fff6c8, #ff8fc0 55%, transparent 70%);
+  animation: bloom 220ms ease-out forwards;
+}
+
+[data-style="spring"] .pop { text-shadow: 0 0 8px #ff8fc0, 0 2px 4px rgba(0, 0, 0, 0.5); }
+[data-style="spring"] .streak { background: #ff8fc0; color: #1f4128; }
+[data-style="spring"] .sheet { background: #24492d; }
