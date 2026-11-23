@@ -4,8 +4,8 @@ import {
   newScore, scorePlacement, boardEmpty,
   dealTrickTray, TRICK_CHANCE, TRICK_BONUS,
   applyGravity, scoreChain, MODES,
-  addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, specialPoints, colorOf, specialOf,
-} from './logic.js?v=13';
+  addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
+} from './logic.js?v=14';
 
 const LIFT = 56;      // px the dragged piece floats above the finger, so it stays visible
 const CLEAR_MS = 220; // matches the pop animation in style.css
@@ -232,7 +232,9 @@ function showSolved() {
 }
 
 // Gravity also deals anchor and flip blocks.
-const withSpecials = t => addSpecials(t, Math.random, SPECIAL_CHANCE, gravity() ? GRAVITY_KINDS : SPECIAL_KINDS);
+const withSpecials = t => (gravity()
+  ? addSpecials(t, Math.random, GRAVITY_SPECIAL_CHANCE, GRAVITY_KINDS)
+  : addSpecials(t, Math.random, SPECIAL_CHANCE, SPECIAL_KINDS));
 
 // About 1 set in TRICK_CHANCE is a trick set when the board allows one.
 function dealNext() {
@@ -331,9 +333,23 @@ function placePiece(index, piece, row, col) {
   tray[index] = null;
   const lines = fullLines(board);
   drawBoard();
+  const flip = gravity() && piece.special?.s === 'flip';
   if (lines.rows.length || lines.cols.length) {
     busy = true;
     resolveClears(piece, row, col, lines).then(() => { busy = false; afterTurn(); });
+  } else if (flip) {
+    // A flip works the moment it lands: its column falls up right away,
+    // which can fill lines and start a chain.
+    busy = true;
+    (async () => {
+      await wait(80);
+      await drop([col + piece.cells[piece.special.i][1]]);
+      const after = fullLines(board);
+      if (after.rows.length || after.cols.length) await resolveClears(piece, row, col, after);
+      else { score = scorePlacement(score, piece.cells.length, after); saveBest(); }
+      busy = false;
+      afterTurn();
+    })();
   } else {
     score = scorePlacement(score, piece.cells.length, lines);
     saveBest();
@@ -463,8 +479,8 @@ async function resolveClears(piece, row, col, lines) {
 }
 
 // Let every block fall, with each one sliding down from where it was.
-async function drop() {
-  const { board: next, falls } = applyGravity(board);
+async function drop(onlyCols = null) {
+  const { board: next, falls } = applyGravity(board, onlyCols);
   board = next;
   drawBoard();
   let moved = false;

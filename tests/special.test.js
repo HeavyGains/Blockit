@@ -129,6 +129,17 @@ test('flip and anchor together: blocks fall up against the anchor', () => {
 
 test('addSpecials can use the Gravity kinds', () => {
   const tray = [piece('dot')];
-  const [p] = addSpecials(tray, () => 0.99999, 1, GRAVITY_KINDS);
+  const [p] = addSpecials(tray, () => 0.99999, 1, GRAVITY_KINDS); // last kind
   assert.equal(p.special.s, 'flip');
+});
+
+test('gravity can settle just some columns', () => {
+  const b = emptyBoard();
+  b[3][0] = 1;
+  b[3][1] = 2;
+  b[6][1] = { c: 0, s: 'flip' };
+  const { board } = applyGravity(b, [1]);
+  assert.equal(board[3][0], 1); // column 0 left alone
+  assert.equal(board[0][1], 2);
+  assert.deepEqual(board[1][1], { c: 0, s: 'flip' });
 });

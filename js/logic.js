@@ -274,10 +274,15 @@ export function dealTrickTray(rng = Math.random, board, tries = TRICK_TRIES) {
 // if it fell up (0 if it didn't move or is empty).
 // Gravity specials: an anchor never moves, and blocks rest on it. A flip
 // block makes its whole column fall up instead of down.
-export function applyGravity(board) {
+// onlyCols: settle just these columns and leave the rest as they are.
+export function applyGravity(board, onlyCols = null) {
   const next = emptyBoard();
   const falls = Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
   for (let c = 0; c < SIZE; c++) {
+    if (onlyCols && !onlyCols.includes(c)) {
+      for (let r = 0; r < SIZE; r++) next[r][c] = board[r][c];
+      continue;
+    }
     const up = board.some(line => specialOf(line[c]) === 'flip');
     // Anchors split the column into stretches; each settles on its own.
     let top = 0;
@@ -337,7 +342,9 @@ export const MODES = [
 export const SPECIAL_CHANCE = 0.25; // share of pieces that get a special cell
 export const SPECIAL_KINDS = [['bomb', 0.4], ['stone', 0.35], ['star', 0.25]];
 // Gravity adds anchor (never falls) and flip (its column falls up).
-export const GRAVITY_KINDS = [['bomb', 0.28], ['stone', 0.22], ['star', 0.18], ['anchor', 0.16], ['flip', 0.16]];
+// Gravity also deals specials a bit more often, so these show up.
+export const GRAVITY_KINDS = [['bomb', 0.2], ['stone', 0.13], ['star', 0.13], ['anchor', 0.27], ['flip', 0.27]];
+export const GRAVITY_SPECIAL_CHANCE = 0.35;
 export const STAR_BONUS = 50;
 
 export const colorOf = v => (v !== null && typeof v === 'object' ? v.c : v);
