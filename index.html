@@ -12,8 +12,8 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-  <link rel="stylesheet" href="css/style.css?v=19">
-  <link rel="stylesheet" href="css/styles.css?v=19">
+  <link rel="stylesheet" href="css/style.css?v=21">
+  <link rel="stylesheet" href="css/styles.css?v=21">
   <script>
     // Set the saved style before the page draws, so it doesn't flash.
     try {
@@ -66,6 +66,16 @@
     </div>
   </div>
 
+  <div id="scores" class="overlay" hidden>
+    <div class="sheet">
+      <h2>🏆 Scoreboard</h2>
+      <div id="scoretabs" class="chips"></div>
+      <ol id="scorelist" class="scorelist"></ol>
+      <p id="scorenote" class="hint small"></p>
+      <button id="scores-close" class="text-btn" type="button">Close</button>
+    </div>
+  </div>
+
   <div id="players" class="overlay" hidden>
     <div class="sheet">
       <h2 id="players-title">Who's playing?</h2>
@@ -90,11 +100,12 @@
       </button>
       <p class="hint small">Each mode, with or without specials, keeps its own game and best.</p>
       <button id="newgame" class="primary-btn" type="button">New game</button>
+      <button id="scores-open" class="text-btn" type="button">🏆 Scoreboard</button>
       <button id="modes-close" class="text-btn" type="button">Close</button>
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=19"></script>
+  <script type="module" src="js/app.js?v=21"></script>
   <script>
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' });
   </script>
