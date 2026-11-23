@@ -379,7 +379,8 @@ export function resolveClear(board, { rows, cols }) {
     const [r, c] = key.split(',').map(Number);
     if (!(rows.includes(r) || cols.includes(c)) && board[r][c] !== null && specialOf(board[r][c]) !== 'stone') blast++;
   }
-  return { board: next, blast, stars, cracked, hit: [...hit], lineCells };
+  const bombs = [...fired].map(k => k.split(',').map(Number));
+  return { board: next, blast, stars, cracked, hit: [...hit], lineCells, bombs };
 }
 
 // Extra points from specials in one clear, on top of the normal clear points.
