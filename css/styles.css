@@ -161,13 +161,13 @@
 /* ---------- Candy jelly ---------- */
 
 [data-style="candy"] {
-  --bg: #ffe1ee;
-  --board: #ffc9de;
-  --empty: rgba(255, 255, 255, 0.45);
-  --text: #7a2d55;
-  --muted: #b0668c;
-  --accent: #ff5fa0;
-  --glow: rgba(255, 95, 160, 0.8);
+  --bg: #4a1630;
+  --board: #6b2246;
+  --empty: rgba(255, 200, 225, 0.13);
+  --text: #ffeaf3;
+  --muted: #d99ab8;
+  --accent: #ff6fa8;
+  --glow: rgba(255, 140, 190, 0.8);
   --c0: #ff5f8f;
   --c1: #ffad3d;
   --c2: #5fd98a;
@@ -176,7 +176,7 @@
   --c5: #ff7fd6;
 }
 
-[data-style="candy"] .board { border-radius: 18px; box-shadow: 0 6px 0 #f3a9c8, 0 10px 24px rgba(200, 60, 120, 0.2); }
+[data-style="candy"] .board { border-radius: 18px; box-shadow: 0 6px 0 #2e0c1d, 0 10px 24px rgba(0, 0, 0, 0.35); }
 [data-style="candy"] .cell::after { border-radius: 10px; }
 
 /* Glossy jelly: a soft shine top-left, a darker bottom edge. */
@@ -191,7 +191,7 @@
 [data-style="candy"] .cell.clearing::after { background: var(--k, #fff); animation: bubble 220ms ease-out forwards; }
 @keyframes bubble { 60% { transform: scale(1.35); opacity: 0.8; } to { transform: scale(1.6); opacity: 0; } }
 [data-style="candy"] .pop { color: #fff; text-shadow: 0 2px 0 #e0478a, 0 0 8px #ff5fa0; }
-[data-style="candy"] .sheet { background: #fff0f6; }
+[data-style="candy"] .sheet { background: #5a1c3a; }
 
 /* ---------- Woodshop ---------- */
 
