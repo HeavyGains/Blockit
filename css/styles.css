@@ -562,12 +562,12 @@
   --accent: #f2c14e;
   --glow: rgba(255, 215, 120, 0.9);
   /* Cookie colors: gingerbread, sugar star, iced tree, blue snowflake,
-     chocolate crinkle, peppermint. */
+     wrapped gift, peppermint. */
   --c0: #b8703f;
   --c1: #f4d58d;
   --c2: #3fa362;
   --c3: #8cc8f2;
-  --c4: #6b4430;
+  --c4: #9b4fd1;
   --c5: #e0465a;
   --icing: #fffaf0;
 }
@@ -658,15 +658,14 @@
     radial-gradient(circle, transparent 60%, #c9a26a 61%);
 }
 
-/* Chocolate crinkle dusted with powdered sugar. */
+/* A wrapped gift with a gold ribbon and bow (the one present among the cookies). */
 [data-style="gift"] .cell[data-c="4"]::after {
-  clip-path: polygon(50% 2%, 66% 6%, 82% 14%, 94% 30%, 98% 50%, 93% 68%, 84% 84%, 66% 95%, 50% 98%, 33% 95%, 16% 86%, 6% 70%, 2% 50%, 7% 31%, 17% 15%, 33% 5%);
+  clip-path: polygon(5% 26%, 32% 26%, 16% 14%, 24% 2%, 50% 22%, 76% 2%, 84% 14%, 68% 26%, 95% 26%, 95% 100%, 5% 100%);
   --deco:
-    radial-gradient(ellipse 16% 10% at 30% 28%, var(--icing) 70%, transparent 75%),
-    radial-gradient(ellipse 14% 9% at 66% 34%, var(--icing) 70%, transparent 75%),
-    radial-gradient(ellipse 18% 9% at 46% 58%, var(--icing) 70%, transparent 75%),
-    radial-gradient(ellipse 12% 8% at 74% 70%, var(--icing) 70%, transparent 75%),
-    radial-gradient(ellipse 12% 8% at 26% 72%, var(--icing) 70%, transparent 75%);
+    linear-gradient(#f2c14e 0 26%, transparent 26%),
+    linear-gradient(90deg, transparent 42%, #f2c14e 42% 58%, transparent 58%),
+    linear-gradient(transparent 54%, #f2c14e 54% 66%, transparent 66%),
+    linear-gradient(transparent 26%, rgba(0, 0, 0, 0.18) 26% 31%, transparent 31%);
 }
 
 /* Peppermint swirl. */
