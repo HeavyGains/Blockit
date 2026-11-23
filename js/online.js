@@ -1,7 +1,7 @@
 // Online scoreboard: sends scores to a small Supabase table and reads the
 // best per player and mode back. Scores wait in an outbox (saved on the phone)
 // until they're sent, so playing offline loses nothing.
-import { ONLINE } from './config.js?v=22';
+import { ONLINE } from './config.js?v=23';
 
 export const online = () => Boolean(ONLINE.url && ONLINE.key);
 

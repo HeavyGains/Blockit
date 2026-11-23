@@ -6,9 +6,9 @@ import {
   applyGravity, scoreChain, MODES,
   dayKey, dailyTray, shareText, shortDay,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=22';
-import { online, queueScore, fetchBoard } from './online.js?v=22';
-import { sfx, unlock, setSoundOn } from './sound.js?v=22';
+} from './logic.js?v=23';
+import { online, queueScore, fetchBoard } from './online.js?v=23';
+import { sfx, unlock, setSoundOn } from './sound.js?v=23';
 
 const LIFT = 56;      // px the dragged piece floats above the finger, so it stays visible
 const CLEAR_MS = 220; // matches the pop animation in style.css
@@ -98,13 +98,29 @@ const STYLES = [
   { id: 'garden', name: 'Garden' },
   { id: 'camo', name: 'Camo' },
   { id: 'classic', name: 'Classic' },
+  // Seasonal styles: a tab of their own in the Style sheet.
+  { id: 'snowfall', name: 'Snowfall', group: 'seasonal' },
+  { id: 'gift', name: 'Gift wrap', group: 'seasonal' },
 ];
+const STYLE_GROUPS = [
+  { id: 'everyday', name: 'Everyday' },
+  { id: 'seasonal', name: '❄️ Seasonal' },
+];
+const groupOf = s => s.group || 'everyday';
 const styles = store.get('blockit.style', {});
 const stylesEl = document.getElementById('styles');
 const swatchesEl = document.getElementById('swatches');
+const styleTabsEl = document.getElementById('styletabs');
+let styleTab = 'everyday';
 
 function currentStyle() {
   return STYLES.some(s => s.id === styles[player]) ? styles[player] : STYLES[0].id;
+}
+
+function showStyleTab(tab) {
+  styleTab = tab;
+  for (const b of styleTabsEl.children) b.setAttribute('aria-pressed', String(b.dataset.id === tab));
+  for (const b of swatchesEl.children) b.hidden = b.dataset.group !== tab;
 }
 
 function applyStyle() {
@@ -115,11 +131,22 @@ function applyStyle() {
   for (const b of swatchesEl.children) b.setAttribute('aria-pressed', String(b.dataset.id === id));
 }
 
+styleTabsEl.replaceChildren(...STYLE_GROUPS.map(g => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'chip';
+  b.dataset.id = g.id;
+  b.textContent = g.name;
+  b.addEventListener('click', () => showStyleTab(g.id));
+  return b;
+}));
+
 swatchesEl.replaceChildren(...STYLES.map(s => {
   const b = document.createElement('button');
   b.type = 'button';
   b.className = 'swatch';
   b.dataset.id = s.id;
+  b.dataset.group = groupOf(s);
   const mini = document.createElement('span');
   mini.className = 'mini';
   mini.dataset.style = s.id; // the mini board takes that style's colors
@@ -133,8 +160,13 @@ swatchesEl.replaceChildren(...STYLES.map(s => {
   });
   return b;
 }));
+showStyleTab(styleTab);
 
-document.getElementById('palette').addEventListener('click', () => { stylesEl.hidden = false; });
+document.getElementById('palette').addEventListener('click', () => {
+  // Open on the tab that holds the style in use.
+  showStyleTab(groupOf(STYLES.find(s => s.id === currentStyle())));
+  stylesEl.hidden = false;
+});
 document.getElementById('styles-close').addEventListener('click', () => { stylesEl.hidden = true; });
 stylesEl.addEventListener('click', e => { if (e.target === stylesEl) stylesEl.hidden = true; });
 

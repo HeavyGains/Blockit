@@ -357,6 +357,10 @@ main {
 }
 
 .swatch[aria-pressed="true"] { border-color: var(--accent); }
+.swatch[hidden] { display: none; }
+
+/* Style tabs (Everyday / Seasonal) sit right under the title. */
+#styletabs { margin: 0 0 10px; }
 
 #styles .sheet { padding: 20px 12px 12px; }
 

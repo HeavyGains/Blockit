@@ -12,8 +12,8 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-  <link rel="stylesheet" href="css/style.css?v=22">
-  <link rel="stylesheet" href="css/styles.css?v=22">
+  <link rel="stylesheet" href="css/style.css?v=23">
+  <link rel="stylesheet" href="css/styles.css?v=23">
   <script>
     // Set the saved style before the page draws, so it doesn't flash.
     try {
@@ -61,6 +61,7 @@
   <div id="styles" class="overlay" hidden>
     <div class="sheet">
       <h2>Style</h2>
+      <div id="styletabs" class="chips"></div>
       <div id="swatches" class="swatches"></div>
       <button id="styles-close" class="text-btn" type="button">Done</button>
     </div>
@@ -105,7 +106,7 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=22"></script>
+  <script type="module" src="js/app.js?v=23"></script>
   <script>
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' });
   </script>
