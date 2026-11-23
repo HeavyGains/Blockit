@@ -5,8 +5,8 @@ import {
   dealTrickTray, TRICK_CHANCE, TRICK_BONUS,
   applyGravity, scoreChain, MODES,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=16';
-import { sfx, unlock, setSoundOn } from './sound.js?v=16';
+} from './logic.js?v=17';
+import { sfx, unlock, setSoundOn } from './sound.js?v=17';
 
 const LIFT = 56;      // px the dragged piece floats above the finger, so it stays visible
 const CLEAR_MS = 220; // matches the pop animation in style.css

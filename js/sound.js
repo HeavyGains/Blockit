@@ -4,6 +4,7 @@
 
 let ctx = null;
 let master = null;
+let room = null; // a small reverb, so sounds have space around them
 let on = true;
 
 export function setSoundOn(value) { on = value; }
@@ -17,9 +18,62 @@ export function unlock() {
       master = ctx.createGain();
       master.gain.value = 0.5;
       master.connect(ctx.destination);
+      room = makeRoom();
     }
     if (ctx.state === 'suspended') ctx.resume();
   } catch { /* no audio on this device */ }
+}
+
+// A soft room: a convolver fed with a short burst of fading noise.
+function makeRoom() {
+  const len = Math.floor(ctx.sampleRate * 1.3);
+  const ir = ctx.createBuffer(2, len, ctx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = ir.getChannelData(ch);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+  }
+  const conv = ctx.createConvolver();
+  conv.buffer = ir;
+  const tone = ctx.createBiquadFilter(); // darken the tail
+  tone.type = 'lowpass';
+  tone.frequency.value = 3500;
+  const g = ctx.createGain();
+  g.gain.value = 0.35;
+  conv.connect(tone).connect(g).connect(master);
+  return conv;
+}
+
+// Send a node to the speakers, with some of it into the room.
+function out(node, wet = 0.3) {
+  node.connect(master);
+  if (room && wet) {
+    const send = ctx.createGain();
+    send.gain.value = wet;
+    node.connect(send).connect(room);
+  }
+}
+
+// A mallet note (like a marimba): a warm fundamental plus a quickly fading
+// overtone for the strike, with a soft low layer underneath for body.
+function mallet(freq, { at = 0, dur = 0.5, vol = 0.25, wet = 0.35 } = {}) {
+  const t = ctx.currentTime + at;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.006);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  out(g, wet);
+  const parts = [[1, 'sine', 1], [3.98, 'sine', 0.35, 0.08], [0.5, 'triangle', 0.4]];
+  for (const [ratio, type, level, decay] of parts) {
+    const osc = ctx.createOscillator();
+    const pg = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq * ratio;
+    pg.gain.setValueAtTime(level, t);
+    if (decay) pg.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+    osc.connect(pg).connect(g);
+    osc.start(t);
+    osc.stop(t + dur + 0.05);
+  }
 }
 
 const ready = () => on && ctx && ctx.state === 'running';
@@ -106,11 +160,39 @@ function boomFx() {
 const SCALE = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51, 1567.98, 1760];
 
 export const sfx = {
-  // A soft wooden knock when a piece lands.
+  // A soft, round wooden thunk when a piece lands: a low body that drops in
+  // pitch, a muted click for the contact, and a touch of room.
   place() {
     if (!ready()) return;
-    tone(180, { dur: 0.09, type: 'triangle', vol: 0.35, to: 90 });
-    tone(900, { dur: 0.03, type: 'square', vol: 0.04 });
+    const t = ctx.currentTime;
+    const body = ctx.createOscillator();
+    const bg = ctx.createGain();
+    body.type = 'sine';
+    body.frequency.setValueAtTime(210, t);
+    body.frequency.exponentialRampToValueAtTime(85, t + 0.16);
+    bg.gain.setValueAtTime(0.0001, t);
+    bg.gain.exponentialRampToValueAtTime(0.55, t + 0.004);
+    bg.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+    body.connect(bg);
+    out(bg, 0.15);
+    body.start(t);
+    body.stop(t + 0.25);
+    // Contact click: a tiny burst of noise through a band filter, like wood on wood.
+    const len = Math.floor(ctx.sampleRate * 0.03);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 4);
+    const click = ctx.createBufferSource();
+    click.buffer = buf;
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 1400;
+    bp.Q.value = 1.2;
+    const cg = ctx.createGain();
+    cg.gain.value = 0.5;
+    click.connect(bp).connect(cg);
+    out(cg, 0.2);
+    click.start(t);
   },
 
   // A bright chime when lines clear; more lines, more notes.
@@ -120,12 +202,12 @@ export const sfx = {
     for (let i = 0; i < n; i++) tone(SCALE[i * 2], { at: i * 0.05, dur: 0.25, type: 'triangle', vol: 0.22 });
   },
 
-  // A rising run for a streak or a Gravity chain; the higher the step, the higher it climbs.
+  // A rising mallet run for a streak or a Gravity chain; the higher the step, the higher it climbs.
   combo(step = 2) {
     if (!ready()) return;
     const base = Math.min(step - 1, SCALE.length - 4);
     for (let i = 0; i < 4; i++) {
-      tone(SCALE[base + i], { at: 0.12 + i * 0.06, dur: 0.18, type: 'square', vol: 0.09 });
+      mallet(SCALE[base + i] / 2, { at: 0.12 + i * 0.07, dur: i === 3 ? 0.9 : 0.45, vol: 0.22 });
     }
   },
 
