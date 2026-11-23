@@ -6,10 +6,10 @@ import {
   applyGravity, scoreChain, MODES,
   dayKey, dailyTray, shareText, shortDay,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=31';
-import { online, queueScore, fetchBoard } from './online.js?v=31';
-import { sfx, unlock, setSoundOn } from './sound.js?v=31';
-import { haptic, setHapticsOn } from './haptics.js?v=31';
+} from './logic.js?v=32';
+import { online, queueScore, fetchBoard } from './online.js?v=32';
+import { sfx, unlock, setSoundOn } from './sound.js?v=32';
+import { haptic, setHapticsOn } from './haptics.js?v=32';
 
 const LIFT = 84;      // px the dragged piece floats above the finger, so it stays visible
 const GAIN = 1.4;     // the piece travels 1.4x the finger's movement, so short swipes reach the far side
@@ -103,6 +103,8 @@ const STYLES = [
   { id: 'camo', name: 'Camo' },
   { id: 'classic', name: 'Classic' },
   // Seasonal styles: a tab of their own in the Style sheet.
+  { id: 'spring', name: 'Spring', group: 'seasonal' },
+  { id: 'fall', name: 'Fall', group: 'seasonal' },
   { id: 'halloween', name: 'Halloween', group: 'seasonal' },
   { id: 'thanksgiving', name: 'Thanksgiving', group: 'seasonal' },
   { id: 'snowfall', name: 'Winter', group: 'seasonal' },
