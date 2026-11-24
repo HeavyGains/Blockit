@@ -6,14 +6,14 @@ import {
   applyGravity, scoreChain, MODES,
   dayKey, dailyTray, shareText, shortDay, duelId, duelName,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=44';
+} from './logic.js?v=45';
 import {
   HEX_RADIUS, emptyHexBoard, canPlaceHex, placeHex, hexFullLines, hexLineCount, hexClearedCells,
   fitsAnywhereHex, isHexGameOver, previewHexLines, dealHexTray, scoreHexPlacement, dailyHexTray, resolveHexClear,
-} from './hex.js?v=44';
-import { online, queueScore, fetchBoard } from './online.js?v=44';
-import { sfx, unlock, setSoundOn } from './sound.js?v=44';
-import { haptic, setHapticsOn } from './haptics.js?v=44';
+} from './hex.js?v=45';
+import { online, queueScore, fetchBoard } from './online.js?v=45';
+import { sfx, unlock, setSoundOn } from './sound.js?v=45';
+import { haptic, setHapticsOn } from './haptics.js?v=45';
 
 const LIFT = 84;      // px the dragged piece floats above the finger, so it stays visible
 const GAIN = 1.4;     // the piece travels 1.4x the finger's movement, so short swipes reach the far side
