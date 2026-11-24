@@ -4,9 +4,9 @@ import {
   HEX_RADIUS, HEX_CELLS, AXES, lineCells, onBoard, emptyHexBoard, getCell,
   HEX_SHAPES, HEX_PIECES, canPlaceHex, placeHex, hexFullLines, hexLineCount,
   hexClearedCells, clearHexLines, fitsAnywhereHex, isHexGameOver, previewHexLines,
-  playHexMove, dealHexTray, scoreHexPlacement, hexBoardEmpty,
+  playHexMove, dealHexTray, scoreHexPlacement, hexBoardEmpty, dailyHexTray,
 } from '../js/hex.js';
-import { seededRng, newScore, TRAY_SIZE, CLEAR_POINTS, WIPE_BONUS } from '../js/logic.js';
+import { seededRng, newScore, TRAY_SIZE, CLEAR_POINTS, WIPE_BONUS, duelId, duelName, shareText } from '../js/logic.js';
 
 const piece = id => HEX_PIECES.find(p => p.id === id);
 const fill = (board, cells, v = 1) => {
@@ -134,4 +134,15 @@ test('scoring matches Classic rules, counting hex line cells', () => {
   const miss = scoreHexPlacement(s, 3, { q: [], r: [], s: [] });
   assert.equal(miss.gained, 3);
   assert.equal(miss.streak, 2);
+});
+
+test('Hex Daily Duel: same sets for everyone each day, its own name and scores', () => {
+  const ids = t => t.map(p => `${p.id}:${p.color}`).join(' ');
+  assert.equal(ids(dailyHexTray('2026-11-24', 0)), ids(dailyHexTray('2026-11-24', 0)));
+  assert.notEqual(ids(dailyHexTray('2026-11-24', 0)), ids(dailyHexTray('2026-11-24', 1)));
+  assert.notEqual(ids(dailyHexTray('2026-11-24', 0)), ids(dailyHexTray('2026-11-25', 0)));
+  assert.ok(dailyHexTray('2026-11-24', 0).every(p => HEX_PIECES.some(h => h.id === p.id)));
+  assert.equal(duelId('hex'), 'daily-hex');
+  assert.equal(duelName('hex'), 'Hex Duel');
+  assert.equal(shareText('2026-11-24', 1234, 'Jason', 'hex'), 'Blockit Hex Duel 11/24: 1,234 (Jason)');
 });

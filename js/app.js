@@ -6,14 +6,14 @@ import {
   applyGravity, scoreChain, MODES,
   dayKey, dailyTray, shareText, shortDay, duelId, duelName,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=40';
+} from './logic.js?v=41';
 import {
   HEX_RADIUS, emptyHexBoard, canPlaceHex, placeHex, hexFullLines, hexLineCount, hexClearedCells,
-  clearHexLines, fitsAnywhereHex, isHexGameOver, previewHexLines, dealHexTray, scoreHexPlacement,
-} from './hex.js?v=40';
-import { online, queueScore, fetchBoard } from './online.js?v=40';
-import { sfx, unlock, setSoundOn } from './sound.js?v=40';
-import { haptic, setHapticsOn } from './haptics.js?v=40';
+  clearHexLines, fitsAnywhereHex, isHexGameOver, previewHexLines, dealHexTray, scoreHexPlacement, dailyHexTray,
+} from './hex.js?v=41';
+import { online, queueScore, fetchBoard } from './online.js?v=41';
+import { sfx, unlock, setSoundOn } from './sound.js?v=41';
+import { haptic, setHapticsOn } from './haptics.js?v=41';
 
 const LIFT = 84;      // px the dragged piece floats above the finger, so it stays visible
 const GAIN = 1.4;     // the piece travels 1.4x the finger's movement, so short swipes reach the far side
@@ -75,10 +75,10 @@ if (store.get('blockit.mode') === 'daily') {
 }
 let mode = MODES.some(m => m.id === store.get('blockit.mode')) ? store.get('blockit.mode') : 'classic';
 const gravity = () => mode === 'gravity';
-// Hex: a hexagon board where lines clear 3 ways (rules in hex.js). No specials,
-// Daily Duel or tricky sets in Hex yet.
+// Hex: a hexagon board where lines clear 3 ways (rules in hex.js). No specials
+// or tricky sets in Hex yet; its Daily Duel is 'daily-hex'.
 const hex = () => mode === 'hex';
-if (hex()) { specials = false; duel = false; }
+if (hex()) specials = false;
 let soundOn = store.get('blockit.sound', true) !== false;
 setSoundOn(soundOn);
 let hapticsOn = store.get('blockit.haptics', true) !== false;
@@ -477,8 +477,12 @@ const withSpecials = t => (gravity()
 
 // About 1 set in TRICK_CHANCE is a trick set when the board allows one.
 function dealNext() {
+  if (daily()) {
+    setNo++;
+    trickSet = false;
+    return hex() ? dailyHexTray(day, setNo, board) : dailyTray(day, setNo, board, variant());
+  }
   if (hex()) { trickSet = false; return G.deal(board); }
-  if (daily()) { setNo++; trickSet = false; return dailyTray(day, setNo, board, variant()); }
   // Trick sets are solved with Classic rules, so they only come in Classic.
   if (specials) return withSpecials(dealTray(Math.random, board));
   const trick = !gravity() && Math.random() < TRICK_CHANCE ? dealTrickTray(Math.random, board) : null;
@@ -902,7 +906,7 @@ function newGame() {
   if (daily()) {
     day = dayKey();
     setNo = 0;
-    tray = dailyTray(day, 0, null, variant());
+    tray = hex() ? dailyHexTray(day, 0) : dailyTray(day, 0, null, variant());
     // One try a day: if this player already played today, show their result.
     const done = dailyScores()[player];
     if (done !== undefined) {
@@ -965,11 +969,10 @@ function switchGame() {
 const specialsBtn = document.getElementById('specials');
 const duelBtn = document.getElementById('duel');
 function drawSpecials() {
-  // Hex has no specials or Daily Duel yet.
+  // Hex has no special blocks yet.
   const hexPick = pick.mode === 'hex';
-  if (hexPick) { pick.specials = false; pick.duel = false; }
+  if (hexPick) pick.specials = false;
   specialsBtn.disabled = hexPick;
-  duelBtn.disabled = hexPick;
   specialsBtn.setAttribute('aria-pressed', String(pick.specials));
   specialsBtn.querySelector('b').textContent = pick.specials ? 'On' : 'Off';
   duelBtn.setAttribute('aria-pressed', String(pick.duel));
