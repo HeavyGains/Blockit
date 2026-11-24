@@ -13,7 +13,7 @@
 // HEX_RADIUS so they start at 0). Spots outside the hexagon are never used.
 // A cell is null (empty) or a color index, or { c, s } for a special.
 
-import { TRAY_SIZE, COLORS, MAX_REROLLS, CELL_POINTS, CLEAR_POINTS, WIPE_BONUS, STREAK_GRACE } from './logic.js?v=37';
+import { TRAY_SIZE, COLORS, MAX_REROLLS, CELL_POINTS, CLEAR_POINTS, WIPE_BONUS, STREAK_GRACE } from './logic.js?v=38';
 
 export const HEX_RADIUS = 4;
 const SPAN = HEX_RADIUS * 2 + 1;
