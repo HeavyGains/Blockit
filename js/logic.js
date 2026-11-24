@@ -330,6 +330,7 @@ export function playGravityMove(board, piece, row, col) {
 export const MODES = [
   { id: 'classic', name: 'Classic', about: 'Fill rows and columns to clear them.' },
   { id: 'gravity', name: 'Gravity', about: 'After a clear, blocks fall down. Set off chain reactions!' },
+  { id: 'hex', name: 'Hex', about: 'A hexagon board. Lines clear 3 ways. (No specials or Daily Duel yet.)' },
 ];
 
 // ---------- Special blocks ----------

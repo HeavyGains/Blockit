@@ -659,3 +659,51 @@ html[data-style] .pop.boom small { color: #ff6d00; text-shadow: 0 1px 0 rgba(0, 
 .scorelist .rank { width: 26px; text-align: center; font-weight: 800; color: var(--muted); }
 .scorelist .who-name { flex: 1; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .scorelist b { font-weight: 900; font-variant-numeric: tabular-nums; }
+
+/* ---------- Hex mode ----------
+   Cells are hexagons placed by --hx/--hy (in cell widths, --u). The board is
+   as wide as the square one: 9 hex cells across the middle row. */
+
+.board.hex {
+  --u: calc(var(--cell) * 8 / 9);
+  display: block;
+  width: calc(var(--cell) * 8 + 8px);
+  height: calc(var(--u) * 8.083 + 8px);
+}
+
+.board.hex .cell,
+.piece.hex .cell {
+  position: absolute;
+  left: calc(var(--hx) * var(--u));
+  top: calc(var(--hy) * var(--u));
+  width: var(--u);
+  height: calc(var(--u) * 1.1547);
+}
+
+.board.hex .cell { margin: 4px; }
+.board.hex .cell.off { display: none; }
+
+.hex .cell::after,
+.piece.hex .cell::after {
+  inset: 1px;
+  border-radius: 0;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+
+.piece.hex {
+  display: block;
+  position: relative;
+  width: calc(var(--pw) * var(--u));
+  height: calc(var(--ph) * var(--u));
+}
+
+.slot .piece.hex { --u: var(--mini); }
+.drag .piece.hex { --u: calc(var(--cell) * 8 / 9); }
+
+.toggle-btn:disabled { opacity: 0.4; }
+
+/* Empty hexes: a faint tint under the style's empty color, so styles whose
+   empty cells are see-through (Paper, Neon) still show the board's shape. */
+.hex :where(.cell:not([data-c]))::after {
+  background: linear-gradient(var(--empty), var(--empty)), color-mix(in srgb, var(--text) 9%, transparent);
+}
