@@ -6,14 +6,14 @@ import {
   applyGravity, scoreChain, MODES,
   dayKey, dailyTray, shareText, shortDay, duelId, duelName,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=43';
+} from './logic.js?v=44';
 import {
   HEX_RADIUS, emptyHexBoard, canPlaceHex, placeHex, hexFullLines, hexLineCount, hexClearedCells,
   fitsAnywhereHex, isHexGameOver, previewHexLines, dealHexTray, scoreHexPlacement, dailyHexTray, resolveHexClear,
-} from './hex.js?v=43';
-import { online, queueScore, fetchBoard } from './online.js?v=43';
-import { sfx, unlock, setSoundOn } from './sound.js?v=43';
-import { haptic, setHapticsOn } from './haptics.js?v=43';
+} from './hex.js?v=44';
+import { online, queueScore, fetchBoard } from './online.js?v=44';
+import { sfx, unlock, setSoundOn } from './sound.js?v=44';
+import { haptic, setHapticsOn } from './haptics.js?v=44';
 
 const LIFT = 84;      // px the dragged piece floats above the finger, so it stays visible
 const GAIN = 1.4;     // the piece travels 1.4x the finger's movement, so short swipes reach the far side
@@ -125,6 +125,7 @@ const STYLES = [
   { id: 'spring', name: 'Spring', group: 'seasonal' },
   { id: 'easter', name: 'Easter', group: 'seasonal' },
   { id: 'summer', name: 'Summer', group: 'seasonal' },
+  { id: 'july4', name: '4th of July', group: 'seasonal' },
   { id: 'fall', name: 'Fall', group: 'seasonal' },
   { id: 'halloween', name: 'Halloween', group: 'seasonal' },
   { id: 'thanksgiving', name: 'Thanksgiving', group: 'seasonal' },
