@@ -681,6 +681,12 @@ html[data-style] .pop.boom small { color: #ff6d00; text-shadow: 0 1px 0 rgba(0, 
 }
 
 .board.hex .cell { margin: 4px; }
+
+/* The cell itself is cut to a hexagon too. Styles draw outlines with
+   box-shadow or border, which the hexagon cuts off, so in Hex an outline is
+   the cell's own background (the rim) showing around a smaller hex on top. */
+.board.hex .cell,
+.piece.hex .cell { clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
 .board.hex .cell.off { display: none; }
 
 .hex .cell::after,

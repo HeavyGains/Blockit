@@ -1324,3 +1324,52 @@
 /* Hex mode: the square grid lines don't line up with hexagons. */
 [data-style="paper"] .board.hex,
 [data-style^="neon"] .board.hex { background-image: none; }
+
+/* Hex mode outlines (see .board.hex in style.css): the rim is the cell's
+   background, the block is its ::after inset by the rim's width. Edge-lit
+   styles (Neon, Chalk), Paper's die-cut edge, Camo's outline and the
+   Pixel and Wood bevels are redrawn this way so they follow the hexagon. */
+[data-style] .hex .cell.ghost { background: var(--g); }
+[data-style] .hex .cell.ghost::after {
+  inset: 2.5px;
+  border: 0;
+  box-shadow: none;
+  background: color-mix(in srgb, var(--g) 30%, var(--board));
+}
+[data-style] .hex .cell.glow.ghost::after { background: var(--g); }
+
+[data-style^="neon"] .hex .cell[data-c],
+[data-style="chalk"] .hex .cell[data-c] { background: var(--k); }
+[data-style^="neon"] .hex .cell[data-c]::after {
+  inset: 2.5px;
+  box-shadow: none;
+  background: radial-gradient(circle, color-mix(in srgb, var(--k) 8%, var(--board)) 40%, color-mix(in srgb, var(--k) 50%, var(--board)) 100%);
+}
+[data-style^="neon"] .hex .cell.ghost { background: color-mix(in srgb, var(--g) 60%, var(--board)); }
+[data-style^="neon"] .hex .cell.ghost::after { background: var(--board); }
+[data-style^="neon"] .hex .cell.glow { background: #fff; }
+[data-style^="neon"] .hex .cell.glow::after { box-shadow: none; }
+[data-style^="neon"] .hex .cell.glow.ghost::after { background: color-mix(in srgb, var(--g) 40%, var(--board)); }
+[data-style^="neon"] .piece.hex { filter: drop-shadow(0 0 4px rgba(45, 226, 255, 0.5)); }
+
+[data-style="chalk"] .hex .cell[data-c]::after {
+  inset: 2.5px;
+  border: 0;
+  box-shadow: none;
+  background: color-mix(in srgb, var(--k) 22%, var(--board));
+}
+
+[data-style="paper"] .hex .cell[data-c] { background: #fffdf6; }
+[data-style="paper"] .hex .cell[data-c]::after { inset: 2.5px; box-shadow: none; }
+
+[data-style="camo"] .hex .cell[data-c] { background: rgba(0, 0, 0, 0.55); }
+[data-style="camo"] .hex .cell[data-c]::after { inset: 1.5px; box-shadow: none; }
+
+[data-style="pixel"] .hex .cell[data-c]::after,
+[data-style="wood"] .hex .cell[data-c]::after {
+  box-shadow: none;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.3), transparent 35% 65%, rgba(0, 0, 0, 0.35)), var(--k);
+}
+[data-style^="neon"] .hex .cell.clearing::after,
+[data-style="chalk"] .hex .cell.clearing::after,
+[data-style="paper"] .hex .cell.clearing::after { background: #fff; }
