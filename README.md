@@ -18,7 +18,7 @@ all three earns "Solved!" +100.
 
 Styles: tap the palette to pick Paper stickers (default), Neon arcade, Neon
 sunset, Neon ice, Neon toxic, Candy jelly, Woodshop, Chalkboard, Pixel, Garden,
-Camo or Classic. Each player's choice is saved. Styles live in `css/styles.css`.
+Camo, Cubes (3D cubes on the Hex board) or Classic. Each player's choice is saved. Styles live in `css/styles.css`.
 
 Modes: tap the mode name under the score to switch modes or start a New game.
 Each mode's game in progress is saved on the phone (`blockit.game.<mode>`), so
