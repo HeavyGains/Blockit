@@ -1,7 +1,7 @@
 // Online scoreboard: sends scores to a small Supabase table and reads the
 // best per player and mode back. Scores wait in an outbox (saved on the phone)
 // until they're sent, so playing offline loses nothing.
-import { ONLINE } from './config.js?v=34';
+import { ONLINE } from './config.js?v=35';
 
 export const online = () => Boolean(ONLINE.url && ONLINE.key);
 
@@ -43,15 +43,27 @@ export async function flush() {
       headers: headers({ Prefer: 'return=minimal' }),
       body: JSON.stringify(list),
     });
-    if (!res.ok) throw new Error(res.status);
+    let sent = list;
+    if (res.status === 400 && list.length > 1) {
+      // The server turned the batch down (e.g. a mode it doesn't know yet):
+      // send one at a time so the rest still get through.
+      sent = [];
+      for (const e of list) {
+        const one = await fetch(`${ONLINE.url}/rest/v1/scores`, {
+          method: 'POST', headers: headers({ Prefer: 'return=minimal' }), body: JSON.stringify([e]),
+        });
+        if (one.ok) sent.push(e);
+      }
+      if (sent.length < list.length) scheduleFlush(30000);
+    } else if (!res.ok) throw new Error(res.status);
     // Drop what was sent; keep anything queued meanwhile.
-    write(read().filter(e => !list.some(s => s.player === e.player && s.mode === e.mode && s.day === e.day && s.score === e.score)));
+    write(read().filter(e => !sent.some(s => s.player === e.player && s.mode === e.mode && s.day === e.day && s.score === e.score)));
   } catch {
     scheduleFlush(30000); // offline or server trouble: try again later
   }
 }
 
-// { bests: { mode: { player: best } }, today: { player: score } }
+// { bests: { mode: { player: best } }, today: { duel mode: { player: score } } }
 export async function fetchBoard(day) {
   if (!online()) return null;
   await flush();
@@ -62,12 +74,15 @@ export async function fetchBoard(day) {
   };
   const [best, today] = await Promise.all([
     get('best_scores?select=player,mode,best'),
-    get(`scores?select=player,score&mode=eq.daily&day=eq.${day}`),
+    get(`scores?select=player,mode,score&mode=like.daily*&day=eq.${day}`),
   ]);
   const bests = {};
   for (const { player, mode, best: b } of best) (bests[mode] ||= {})[player] = b;
   const todayBest = {};
-  for (const { player, score } of today) todayBest[player] = Math.max(todayBest[player] || 0, score);
+  for (const { player, mode, score } of today) {
+    const m = (todayBest[mode] ||= {});
+    m[player] = Math.max(m[player] || 0, score);
+  }
   return { bests, today: todayBest };
 }
 
