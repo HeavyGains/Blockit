@@ -13,7 +13,7 @@
 // HEX_RADIUS so they start at 0). Spots outside the hexagon are never used.
 // A cell is null (empty) or a color index, or { c, s } for a special.
 
-import { TRAY_SIZE, COLORS, MAX_REROLLS, CELL_POINTS, CLEAR_POINTS, WIPE_BONUS, STREAK_GRACE } from './logic.js?v=40';
+import { TRAY_SIZE, COLORS, MAX_REROLLS, CELL_POINTS, CLEAR_POINTS, WIPE_BONUS, STREAK_GRACE, seededRng } from './logic.js?v=41';
 
 export const HEX_RADIUS = 4;
 const SPAN = HEX_RADIUS * 2 + 1;
@@ -179,6 +179,12 @@ export function dealHexTray(rng = Math.random, board = null) {
   let tray = randomHexTray(rng);
   for (let i = 0; board && i < MAX_REROLLS && isHexGameOver(board, tray); i++) tray = randomHexTray(rng);
   return tray;
+}
+
+// Hex Daily Duel: set number n of the day, the same for everyone (seeded by
+// the date and set number, like Classic's dailyTray, with its own seed).
+export function dailyHexTray(day, n, board = null) {
+  return dealHexTray(seededRng(`blockit-hex-${day}-${n}`), board);
 }
 
 // ---------- Scoring ----------
