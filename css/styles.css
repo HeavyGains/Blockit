@@ -1373,3 +1373,7 @@
 [data-style^="neon"] .hex .cell.clearing::after,
 [data-style="chalk"] .hex .cell.clearing::after,
 [data-style="paper"] .hex .cell.clearing::after { background: #fff; }
+
+/* Christmas: the dark open cells vanished into the green felt on the hex
+   board, so open hexes are a light frosting tint instead. */
+[data-style="gift"] .board.hex .cell:not([data-c]):not(.ghost)::after { background: rgba(255, 246, 224, 0.14); }
