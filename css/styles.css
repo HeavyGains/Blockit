@@ -1432,7 +1432,7 @@
   --muted: #a7b4dc;
   --accent: #ff4b55;
   --glow: rgba(255, 240, 200, 0.9);
-  /* red firework, star, burger, blue firework, bunting, rocket */
+  /* red firework, star, burger, blue firework, bunting, top hat */
   --c0: #ff4b55;
   --c1: #ffd23f;
   --c2: #e0a24a;
@@ -1484,12 +1484,14 @@
     repeating-conic-gradient(from 90deg at 50% 22%, #e8343c 0 15deg, #fff 15deg 30deg);
 }
 
-/* Rocket with a red nose, blue band and flame. */
+/* Striped top hat with a blue band and a white star. */
 [data-style="july4"] .cell[data-c="5"]::after {
-  clip-path: polygon(50% 0, 64% 16%, 64% 64%, 82% 78%, 82% 88%, 64% 82%, 58% 100%, 42% 100%, 36% 82%, 18% 88%, 18% 78%, 36% 64%);
+  clip-path: polygon(22% 4%, 78% 4%, 74% 70%, 98% 74%, 98% 90%, 2% 90%, 2% 74%, 26% 70%);
   --deco:
-    linear-gradient(#e8343c 0 18%, transparent 18% 40%, #3f6fe0 40% 48%, transparent 48% 84%, #ff9a2e 84%),
-    linear-gradient(90deg, #e8343c 0 36%, transparent 36% 64%, #e8343c 64%) 0 100% / 100% 36% no-repeat;
+    radial-gradient(circle at 50% 61%, #fff 6%, transparent 7%),
+    linear-gradient(transparent 52%, #2f5fd0 52% 70%, transparent 70%),
+    linear-gradient(transparent 70%, #2f5fd0 70%),
+    repeating-linear-gradient(90deg, #e8343c 0 calc(var(--cell) / 10), transparent 0 calc(var(--cell) / 5));
 }
 
 /* Clear: a firework pop. */
