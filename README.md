@@ -72,6 +72,7 @@ Hex: pick Hex in the Game sheet. The board is one big hexagon (5 cells per
 side, 61 cells), pieces are 1 to 4 hex cells, and lines clear in 3 directions.
 Same scoring as Classic, its own saved game and best (`blockit.best.hex`).
 Daily Duel works in Hex too (Hex Duel, `daily-hex`, sets from dailyHexTray).
-No special blocks or tricky sets in Hex yet. Rules live in
+Special blocks work in Hex too (a bomb blasts the 6 hexes around it); no
+tricky sets in Hex. Rules live in
 `js/hex.js` (tested in `tests/hex.test.js`); app.js switches between square and
 hex through a small adapter (`G`).
