@@ -12,8 +12,8 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-  <link rel="stylesheet" href="css/style.css?v=34">
-  <link rel="stylesheet" href="css/styles.css?v=34">
+  <link rel="stylesheet" href="css/style.css?v=35">
+  <link rel="stylesheet" href="css/styles.css?v=35">
   <script>
     // Set the saved style before the page draws, so it doesn't flash.
     try {
@@ -71,6 +71,7 @@
     <div class="sheet">
       <h2>🏆 Scoreboard</h2>
       <div id="scoretabs" class="chips"></div>
+      <div id="scorekinds" class="chips"></div>
       <ol id="scorelist" class="scorelist"></ol>
       <p id="scorenote" class="hint small"></p>
       <button id="scores-close" class="text-btn" type="button">Close</button>
@@ -96,20 +97,23 @@
       <button id="specials" class="toggle-btn" type="button" aria-pressed="false">
         <span>Special blocks 💣 🪨 ⭐</span><b>Off</b>
       </button>
+      <button id="duel" class="toggle-btn" type="button" aria-pressed="false">
+        <span>Daily Duel 📅</span><b>Off</b>
+      </button>
       <button id="sound" class="toggle-btn" type="button" aria-pressed="true">
         <span>Sound 🔊</span><b>On</b>
       </button>
       <button id="haptics" class="toggle-btn" type="button" aria-pressed="true">
         <span>Haptics 📳</span><b>On</b>
       </button>
-      <p class="hint small">Each mode, with or without specials, keeps its own game and best.</p>
+      <p class="hint small">Each mode, with or without specials, keeps its own game and best. Daily Duel: same pieces for everyone today, one try each.</p>
       <button id="newgame" class="primary-btn" type="button">New game</button>
       <button id="scores-open" class="text-btn" type="button">🏆 Scoreboard</button>
       <button id="modes-close" class="text-btn" type="button">Close</button>
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=34"></script>
+  <script type="module" src="js/app.js?v=35"></script>
   <script>
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' });
   </script>

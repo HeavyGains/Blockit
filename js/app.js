@@ -4,12 +4,12 @@ import {
   newScore, scorePlacement, boardEmpty,
   dealTrickTray, TRICK_CHANCE, TRICK_BONUS,
   applyGravity, scoreChain, MODES,
-  dayKey, dailyTray, shareText, shortDay,
+  dayKey, dailyTray, shareText, shortDay, duelId, duelName,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=34';
-import { online, queueScore, fetchBoard } from './online.js?v=34';
-import { sfx, unlock, setSoundOn } from './sound.js?v=34';
-import { haptic, setHapticsOn } from './haptics.js?v=34';
+} from './logic.js?v=35';
+import { online, queueScore, fetchBoard } from './online.js?v=35';
+import { sfx, unlock, setSoundOn } from './sound.js?v=35';
+import { haptic, setHapticsOn } from './haptics.js?v=35';
 
 const LIFT = 84;      // px the dragged piece floats above the finger, so it stays visible
 const GAIN = 1.4;     // the piece travels 1.4x the finger's movement, so short swipes reach the far side
@@ -58,9 +58,19 @@ if (typeof savedPlayer === 'string' && !players.includes(savedPlayer)) players.p
 let player = players.includes(savedPlayer) ? savedPlayer : (players[0] || 'Player');
 // ---------- Mode (saved on this device) ----------
 
+// Daily Duel used to be its own mode (Classic rules). Now it's a switch that
+// works with every mode; an old 'daily' setting becomes Classic with the switch on.
+let duel = store.get('blockit.duel', false) === true;
+let specials = store.get('blockit.specials', false) === true;
+if (store.get('blockit.mode') === 'daily') {
+  duel = true;
+  specials = false; // the old duel never had specials; keeps today's game going
+  store.set('blockit.duel', true);
+  store.set('blockit.specials', false);
+  store.set('blockit.mode', 'classic');
+}
 let mode = MODES.some(m => m.id === store.get('blockit.mode')) ? store.get('blockit.mode') : 'classic';
 const gravity = () => mode === 'gravity';
-let specials = store.get('blockit.specials', false) === true;
 let soundOn = store.get('blockit.sound', true) !== false;
 setSoundOn(soundOn);
 let hapticsOn = store.get('blockit.haptics', true) !== false;
@@ -70,10 +80,11 @@ document.addEventListener('pointerdown', unlock, { capture: true });
 
 // Each mode, with or without special blocks, keeps its own game and best.
 // Classic without specials keeps the original 'blockit.best'.
-const daily = () => mode === 'daily';
-// Daily Duel always uses plain Classic rules, so specials don't apply.
-const variant = () => (specials && !daily() ? `${mode}-special` : mode);
-const bestKey = () => (variant() === 'classic' ? 'blockit.best' : `blockit.best.${variant()}`);
+// Each of those also has its own Daily Duel, with its own best.
+const daily = () => duel;
+const variant = () => (specials ? `${mode}-special` : mode);
+const plainBestKey = v => (v === 'classic' ? 'blockit.best' : `blockit.best.${v}`);
+const bestKey = () => (daily() ? `blockit.best.${duelId(variant())}` : plainBestKey(variant()));
 let bests = store.get(bestKey(), {});
 const best = () => bests[player] || 0;
 
@@ -318,7 +329,9 @@ function drawScore() {
   streakEl.textContent = `x${score.streak}`;
   whoEl.textContent = player;
   bestEl.textContent = best().toLocaleString();
-  modeTagEl.textContent = `${MODES.find(m => m.id === mode).name}${specials && !daily() ? ' · Specials' : ''} ▾`;
+  modeTagEl.textContent = daily()
+    ? `${duelName(variant())} ▾`
+    : `${MODES.find(m => m.id === mode).name}${specials ? ' · Specials' : ''} ▾`;
 }
 
 function draw() {
@@ -375,7 +388,7 @@ const withSpecials = t => (gravity()
 
 // About 1 set in TRICK_CHANCE is a trick set when the board allows one.
 function dealNext() {
-  if (daily()) { setNo++; trickSet = false; return dailyTray(day, setNo, board); }
+  if (daily()) { setNo++; trickSet = false; return dailyTray(day, setNo, board, variant()); }
   // Trick sets are solved with Classic rules, so they only come in Classic.
   if (specials) return withSpecials(dealTray(Math.random, board));
   const trick = !gravity() && Math.random() < TRICK_CHANCE ? dealTrickTray(Math.random, board) : null;
@@ -694,12 +707,13 @@ function showOver() {
   const title = overEl.querySelector('h2');
   const hint = overEl.querySelector('.hint');
   if (daily()) {
-    title.textContent = `Daily Duel ${shortDay(day)}`;
+    title.textContent = `${duelName(variant())} ${shortDay(day)}`;
     const scores = dailyScores();
     hint.textContent = Object.keys(scores).length > 1
       ? Object.entries(scores).sort((a, b) => b[1] - a[1]).map(([n, v]) => `${n} ${v.toLocaleString()}`).join(' · ')
       : 'New pieces tomorrow. Send your score to compare!';
     againBtn.textContent = 'Share score';
+    overAltBtn.textContent = `Play ${MODES.find(m => m.id === mode).name}`;
     overAltBtn.hidden = false;
   } else {
     title.textContent = 'No moves left';
@@ -710,20 +724,23 @@ function showOver() {
   overEl.hidden = false;
 }
 
-// Today's Daily Duel scores on this phone, by player. Older days are dropped.
-function dailyScores() {
-  const d = store.get('blockit.daily', null);
+// Today's scores in a Daily Duel on this phone, by player. Older days are dropped.
+// Classic's duel keeps the original 'blockit.daily'.
+const dailyKey = id => (id === 'daily' ? 'blockit.daily' : `blockit.${id}`);
+function dailyScores(id = duelId(variant())) {
+  const d = store.get(dailyKey(id), null);
   return d && d.day === dayKey() && d.scores ? d.scores : {};
 }
 
 function saveDailyScore() {
-  const scores = { ...dailyScores(), [player]: score.score };
-  store.set('blockit.daily', { day, scores });
-  queueScore({ player, mode: 'daily', score: score.score, day });
+  const id = duelId(variant());
+  const scores = { ...dailyScores(id), [player]: score.score };
+  store.set(dailyKey(id), { day, scores });
+  queueScore({ player, mode: id, score: score.score, day });
 }
 
 async function shareScore() {
-  const text = shareText(day, score.score, player);
+  const text = shareText(day, score.score, player, variant());
   try {
     if (navigator.share) { await navigator.share({ text }); return; }
   } catch { return; /* closed the share sheet */ }
@@ -741,7 +758,7 @@ async function shareScore() {
 // (or closing the page) and coming back picks up where you left off.
 
 // Daily Duel keeps one game per player, since each gets one try a day.
-const gameKey = () => (daily() ? `blockit.game.daily.${player}` : `blockit.game.${variant()}`);
+const gameKey = () => (daily() ? `blockit.game.${duelId(variant())}.${player}` : `blockit.game.${variant()}`);
 
 function saveGame() {
   store.set(gameKey(), { board, tray, score, trickSet, day, setNo });
@@ -779,7 +796,7 @@ function newGame() {
   if (daily()) {
     day = dayKey();
     setNo = 0;
-    tray = dailyTray(day, 0);
+    tray = dailyTray(day, 0, null, variant());
     // One try a day: if this player already played today, show their result.
     const done = dailyScores()[player];
     if (done !== undefined) {
@@ -797,9 +814,10 @@ function newGame() {
 }
 
 againBtn.addEventListener('click', () => (daily() ? shareScore() : newGame()));
+// Leave the duel for the normal game of the same mode.
 overAltBtn.addEventListener('click', () => {
-  mode = 'classic';
-  store.set('blockit.mode', mode);
+  duel = false;
+  store.set('blockit.duel', duel);
   switchGame();
 });
 
@@ -840,12 +858,20 @@ function switchGame() {
 }
 
 const specialsBtn = document.getElementById('specials');
+const duelBtn = document.getElementById('duel');
 function drawSpecials() {
-  specialsBtn.setAttribute('aria-pressed', String(specials && !daily()));
-  specialsBtn.querySelector('b').textContent = daily() ? 'Off' : specials ? 'On' : 'Off';
-  specialsBtn.disabled = daily();
+  specialsBtn.setAttribute('aria-pressed', String(specials));
+  specialsBtn.querySelector('b').textContent = specials ? 'On' : 'Off';
+  duelBtn.setAttribute('aria-pressed', String(duel));
+  duelBtn.querySelector('b').textContent = duel ? 'On' : 'Off';
   document.getElementById('newgame').hidden = daily(); // one try a day
 }
+duelBtn.addEventListener('click', () => {
+  duel = !duel;
+  store.set('blockit.duel', duel);
+  drawSpecials();
+  switchGame();
+});
 specialsBtn.addEventListener('click', () => {
   specials = !specials;
   store.set('blockit.specials', specials);
@@ -896,40 +922,53 @@ document.getElementById('newgame').addEventListener('click', () => {
 // A crown marks the top score in each row.
 
 const scoresEl = document.getElementById('scores');
-const BOARD_TABS = [
-  { id: 'classic', name: 'Classic', key: 'blockit.best' },
-  { id: 'gravity', name: 'Gravity', key: 'blockit.best.gravity' },
-  { id: 'classic-special', name: 'Classic ✦', key: 'blockit.best.classic-special' },
-  { id: 'gravity-special', name: 'Gravity ✦', key: 'blockit.best.gravity-special' },
-  { id: 'today', name: 'Duel today' },
-  { id: 'daily', name: 'Duel best', key: 'blockit.best.daily' },
+// Two rows of tabs: which game, then its all-time best, today's duel or best duel.
+const BOARD_GAMES = [
+  { id: 'classic', name: 'Classic' },
+  { id: 'gravity', name: 'Gravity' },
+  { id: 'classic-special', name: 'Classic ✦' },
+  { id: 'gravity-special', name: 'Gravity ✦' },
 ];
-let boardTab = 'classic';
+const BOARD_KINDS = [
+  { id: 'best', name: 'Best' },
+  { id: 'today', name: 'Duel today' },
+  { id: 'duel', name: 'Duel best' },
+];
+let boardGame = 'classic';
+let boardKind = 'best';
 let onlineBoard = null; // last scores fetched from the server
 let boardNote = '';
 
 // Scores for a tab: the server's when we have them, merged with this phone's
 // (so a score that hasn't been sent yet still shows).
-function tabScores(tab) {
-  const local = tab.id === 'today' ? dailyScores() : store.get(tab.key, {});
-  const remote = onlineBoard ? (tab.id === 'today' ? onlineBoard.today : onlineBoard.bests[tab.id] || {}) : {};
+function tabScores(game, kind) {
+  const id = duelId(game);
+  const local = kind === 'today' ? dailyScores(id)
+    : store.get(kind === 'duel' ? `blockit.best.${id}` : plainBestKey(game), {});
+  const remote = !onlineBoard ? {}
+    : kind === 'today' ? onlineBoard.today[id] || {}
+    : onlineBoard.bests[kind === 'duel' ? id : game] || {};
   const all = { ...remote };
   for (const [p, v] of Object.entries(local)) all[p] = Math.max(all[p] || 0, v);
   return Object.entries(all).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
 }
 
-function drawScoreboard() {
-  const tabsEl = document.getElementById('scoretabs');
-  tabsEl.replaceChildren(...BOARD_TABS.map(t => {
+function chipRow(el, list, current, pick) {
+  el.replaceChildren(...list.map(t => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'chip';
     b.textContent = t.name;
-    b.setAttribute('aria-pressed', String(t.id === boardTab));
-    b.addEventListener('click', () => { boardTab = t.id; drawScoreboard(); });
+    b.setAttribute('aria-pressed', String(t.id === current));
+    b.addEventListener('click', () => { pick(t.id); drawScoreboard(); });
     return b;
   }));
-  const rows = tabScores(BOARD_TABS.find(t => t.id === boardTab));
+}
+
+function drawScoreboard() {
+  chipRow(document.getElementById('scoretabs'), BOARD_GAMES, boardGame, id => { boardGame = id; });
+  chipRow(document.getElementById('scorekinds'), BOARD_KINDS, boardKind, id => { boardKind = id; });
+  const rows = tabScores(boardGame, boardKind);
   const medals = ['👑', '🥈', '🥉'];
   const list = document.getElementById('scorelist');
   if (!rows.length) {
@@ -972,17 +1011,17 @@ async function refreshOnline() {
 
 // The first time the online board is on, send this phone's existing bests.
 if (online() && !store.get('blockit.synced', false)) {
-  for (const t of BOARD_TABS) {
-    if (!t.key || t.id === 'daily') continue;
-    for (const [p, v] of Object.entries(store.get(t.key, {}))) queueScore({ player: p, mode: t.id, score: v });
+  for (const g of BOARD_GAMES) {
+    for (const [p, v] of Object.entries(store.get(plainBestKey(g.id), {}))) queueScore({ player: p, mode: g.id, score: v });
+    for (const [p, v] of Object.entries(dailyScores(duelId(g.id)))) queueScore({ player: p, mode: duelId(g.id), score: v, day: dayKey() });
   }
-  for (const [p, v] of Object.entries(dailyScores())) queueScore({ player: p, mode: 'daily', score: v, day: dayKey() });
   store.set('blockit.synced', true);
 }
 
 document.getElementById('scores-open').addEventListener('click', () => {
   modesEl.hidden = true;
-  boardTab = daily() ? 'today' : variant();
+  boardGame = variant();
+  boardKind = daily() ? 'today' : 'best';
   drawScoreboard();
   scoresEl.hidden = false;
   refreshOnline();

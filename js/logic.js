@@ -330,7 +330,6 @@ export function playGravityMove(board, piece, row, col) {
 export const MODES = [
   { id: 'classic', name: 'Classic', about: 'Fill rows and columns to clear them.' },
   { id: 'gravity', name: 'Gravity', about: 'After a clear, blocks fall down. Set off chain reactions!' },
-  { id: 'daily', name: 'Daily Duel', about: 'Same pieces for everyone today. One try each. Compare scores!' },
 ];
 
 // ---------- Special blocks ----------
@@ -413,7 +412,7 @@ export function specialPoints({ blast, stars }, streak = 1) {
 // ---------- Daily Duel ----------
 // Everyone gets the same pieces on the same day: each set is drawn from a
 // random number generator seeded with the date and the set's number, so it
-// doesn't depend on how anyone played. Classic rules, no specials.
+// doesn't depend on how anyone played.
 
 // Today's date on this phone as 'YYYY-MM-DD'.
 export function dayKey(date = new Date()) {
@@ -436,8 +435,27 @@ export function seededRng(text) {
 
 // Set number n (0, 1, 2...) of the day. With a board, a set where nothing fits
 // is rerolled like any other deal, which only matters when the game would end.
-export function dailyTray(day, n, board = null) {
-  return dealTray(seededRng(`blockit-${day}-${n}`), board);
+// Every game (Classic, Gravity, with or without specials) has its own Daily
+// Duel with its own pieces. Classic keeps the original seed, so its duel
+// didn't change. Specials come from their own seeded rng, so a reroll near the
+// end of a game doesn't shift them.
+export function dailyTray(day, n, board = null, variant = 'classic') {
+  const seed = variant === 'classic' ? `blockit-${day}-${n}` : `blockit-${variant}-${day}-${n}`;
+  const tray = dealTray(seededRng(seed), board);
+  if (!variant.endsWith('-special')) return tray;
+  const rng = seededRng(`${seed}-specials`);
+  return variant.startsWith('gravity')
+    ? addSpecials(tray, rng, GRAVITY_SPECIAL_CHANCE, GRAVITY_KINDS)
+    : addSpecials(tray, rng, SPECIAL_CHANCE, SPECIAL_KINDS);
+}
+
+// Scoreboard/storage id of a game's Daily Duel. Classic's stays 'daily'.
+export const duelId = variant => (variant === 'classic' ? 'daily' : `daily-${variant}`);
+
+// 'Gravity Duel ✦' for 'gravity-special' (✦ = special blocks, as on the scoreboard).
+export function duelName(variant) {
+  const name = variant.startsWith('gravity') ? 'Gravity Duel' : 'Daily Duel';
+  return variant.endsWith('-special') ? `${name} ✦` : name;
 }
 
 // '11/22' from '2026-11-22'.
@@ -446,6 +464,6 @@ export function shortDay(day) {
   return `${m}/${d}`;
 }
 
-export function shareText(day, score, player) {
-  return `Blockit Daily Duel ${shortDay(day)}: ${score.toLocaleString('en-US')} (${player})`;
+export function shareText(day, score, player, variant = 'classic') {
+  return `Blockit ${duelName(variant)} ${shortDay(day)}: ${score.toLocaleString('en-US')} (${player})`;
 }
