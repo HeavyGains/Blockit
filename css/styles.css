@@ -1320,3 +1320,7 @@
 [data-style="summer"] .pop { text-shadow: 0 0 8px #ffc23a, 0 2px 4px rgba(0, 0, 0, 0.5); }
 [data-style="summer"] .streak { background: #ffc23a; color: #0b3342; }
 [data-style="summer"] .sheet { background: #0f4458; box-shadow: 0 0 0 2px #e2c58a; }
+
+/* Hex mode: the square grid lines don't line up with hexagons. */
+[data-style="paper"] .board.hex,
+[data-style^="neon"] .board.hex { background-image: none; }
