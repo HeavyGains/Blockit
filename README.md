@@ -67,3 +67,7 @@ the next reload. It falls back to the saved copy when offline.
 Before each PR, run `npm run bump`: it raises the `?v=N` on the CSS/JS links
 and the imports between JS files, so the phone never runs a new page with old
 code (or the other way round) right after a merge.
+
+Hex mode (in progress): rules live in `js/hex.js` with tests in
+`tests/hex.test.js`. The board is one big hexagon (5 cells per side, 61 cells),
+pieces are 1 to 4 hex cells, and lines clear in 3 directions. Not on screen yet.
