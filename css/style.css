@@ -713,3 +713,7 @@ html[data-style] .pop.boom small { color: #ff6d00; text-shadow: 0 1px 0 rgba(0, 
 .hex :where(.cell:not([data-c]))::after {
   background: linear-gradient(var(--empty), var(--empty)), color-mix(in srgb, var(--text) 9%, transparent);
 }
+
+/* Open hexes sit a little apart, like the square cells, so the board shows
+   between them. */
+.board.hex .cell:not([data-c])::after { inset: 2px; }
