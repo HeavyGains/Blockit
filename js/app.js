@@ -6,10 +6,10 @@ import {
   applyGravity, scoreChain, MODES,
   dayKey, dailyTray, shareText, shortDay, duelId, duelName,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=35';
-import { online, queueScore, fetchBoard } from './online.js?v=35';
-import { sfx, unlock, setSoundOn } from './sound.js?v=35';
-import { haptic, setHapticsOn } from './haptics.js?v=35';
+} from './logic.js?v=36';
+import { online, queueScore, fetchBoard } from './online.js?v=36';
+import { sfx, unlock, setSoundOn } from './sound.js?v=36';
+import { haptic, setHapticsOn } from './haptics.js?v=36';
 
 const LIFT = 84;      // px the dragged piece floats above the finger, so it stays visible
 const GAIN = 1.4;     // the piece travels 1.4x the finger's movement, so short swipes reach the far side
@@ -822,30 +822,28 @@ overAltBtn.addEventListener('click', () => {
 });
 
 // ---------- Mode menu ----------
-// Picking a mode resumes its saved game, or starts one. Picking the one you're
-// in just closes. New game starts the current mode over.
+// Tapping a mode, Special blocks or Daily Duel only picks it. Start then goes
+// to that game (picking up its saved game if there is one); New game starts it
+// over. Close leaves things as they were.
 
 const modesEl = document.getElementById('modes');
 const modeListEl = document.getElementById('modelist');
+let pick = { mode, specials, duel };
 
 function drawModes() {
   modeListEl.replaceChildren(...MODES.map(m => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'mode-btn';
-    b.setAttribute('aria-pressed', String(m.id === mode));
+    b.setAttribute('aria-pressed', String(m.id === pick.mode));
     const name = document.createElement('b');
     name.textContent = m.name;
     const about = document.createElement('span');
     about.textContent = m.about;
     b.append(name, about);
     b.addEventListener('click', () => {
-      modesEl.hidden = true;
-      if (m.id === mode) return;
-      mode = m.id;
-      store.set('blockit.mode', mode);
-      switchGame();
-      drawSpecials();
+      pick.mode = m.id;
+      drawModes();
     });
     return b;
   }));
@@ -860,24 +858,24 @@ function switchGame() {
 const specialsBtn = document.getElementById('specials');
 const duelBtn = document.getElementById('duel');
 function drawSpecials() {
-  specialsBtn.setAttribute('aria-pressed', String(specials));
-  specialsBtn.querySelector('b').textContent = specials ? 'On' : 'Off';
-  duelBtn.setAttribute('aria-pressed', String(duel));
-  duelBtn.querySelector('b').textContent = duel ? 'On' : 'Off';
-  document.getElementById('newgame').hidden = daily(); // one try a day
+  specialsBtn.setAttribute('aria-pressed', String(pick.specials));
+  specialsBtn.querySelector('b').textContent = pick.specials ? 'On' : 'Off';
+  duelBtn.setAttribute('aria-pressed', String(pick.duel));
+  duelBtn.querySelector('b').textContent = pick.duel ? 'On' : 'Off';
+  document.getElementById('newgame').hidden = pick.duel; // one try a day
 }
-duelBtn.addEventListener('click', () => {
-  duel = !duel;
-  store.set('blockit.duel', duel);
-  drawSpecials();
-  switchGame();
-});
-specialsBtn.addEventListener('click', () => {
-  specials = !specials;
+duelBtn.addEventListener('click', () => { pick.duel = !pick.duel; drawSpecials(); });
+specialsBtn.addEventListener('click', () => { pick.specials = !pick.specials; drawSpecials(); });
+
+// Use what's picked in the sheet. True if it's a different game than before.
+function applyPick() {
+  const changed = pick.mode !== mode || pick.specials !== specials || pick.duel !== duel;
+  ({ mode, specials, duel } = pick);
+  store.set('blockit.mode', mode);
   store.set('blockit.specials', specials);
-  drawSpecials();
-  switchGame();
-});
+  store.set('blockit.duel', duel);
+  return changed;
+}
 
 const soundBtn = document.getElementById('sound');
 function drawSound() {
@@ -907,14 +905,21 @@ hapticsBtn.addEventListener('click', () => {
 
 modeTagEl.addEventListener('click', () => {
   if (busy || drag) return;
+  pick = { mode, specials, duel };
   drawModes();
   drawSpecials();
   drawSound();
   drawHaptics();
   modesEl.hidden = false;
 });
+document.getElementById('start').addEventListener('click', () => {
+  modesEl.hidden = true;
+  if (applyPick()) switchGame();
+});
 document.getElementById('newgame').addEventListener('click', () => {
   modesEl.hidden = true;
+  applyPick();
+  bests = store.get(bestKey(), {});
   newGame();
 });
 // ---------- Scoreboard ----------
