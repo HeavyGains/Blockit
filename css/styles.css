@@ -713,7 +713,8 @@
 [data-style="fall"] .cell[data-c]::after,
 [data-style="spring"] .cell[data-c]::after,
 [data-style="easter"] .cell[data-c]::after,
-[data-style="summer"] .cell[data-c]::after {
+[data-style="summer"] .cell[data-c]::after,
+[data-style="july4"] .cell[data-c]::after {
   inset: 1px;
   border-radius: 0;
   background: var(--deco, none), var(--k);
@@ -732,7 +733,9 @@
 [data-style="easter"] .cell[data-c][data-s="stone"]::after,
 [data-style="easter"] .cell[data-c][data-s="crack"]::after,
 [data-style="summer"] .cell[data-c][data-s="stone"]::after,
-[data-style="summer"] .cell[data-c][data-s="crack"]::after { clip-path: none; --deco: none; background: var(--k); border-radius: 4px; }
+[data-style="summer"] .cell[data-c][data-s="crack"]::after,
+[data-style="july4"] .cell[data-c][data-s="stone"]::after,
+[data-style="july4"] .cell[data-c][data-s="crack"]::after { clip-path: none; --deco: none; background: var(--k); border-radius: 4px; }
 
 /* ---------- Halloween ---------- */
 
@@ -1418,3 +1421,84 @@
     var(--k) 0 360deg);
 }
 [data-style="cubes"] .hex .cell.clearing::after { background: #fff; }
+
+/* ---------- 4th of July ---------- */
+
+[data-style="july4"] {
+  --bg: #0b1430;
+  --board: #13224a;
+  --empty: rgba(200, 215, 255, 0.13);
+  --text: #f4f6ff;
+  --muted: #a7b4dc;
+  --accent: #ff4b55;
+  --glow: rgba(255, 240, 200, 0.9);
+  /* red firework, star, burger, blue firework, bunting, rocket */
+  --c0: #ff4b55;
+  --c1: #ffd23f;
+  --c2: #e0a24a;
+  --c3: #4f8cff;
+  --c4: #4466d0;
+  --c5: #f2f3f8;
+}
+
+/* Night sky board with faint stars. */
+[data-style="july4"] .board {
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.18) 0.8px, transparent 1.4px) 3px 5px / 23px 19px,
+    radial-gradient(circle, rgba(255, 255, 255, 0.1) 0.8px, transparent 1.4px) 11px 2px / 31px 27px,
+    var(--board);
+  box-shadow: 0 0 0 3px #c9d3f2, 0 0 0 5px #c8283a, 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+[data-style="july4"] .board .cell:not([data-c])::after { border-radius: 6px; }
+
+/* Firework bursts (red and blue). */
+[data-style="july4"] .cell[data-c="0"]::after,
+[data-style="july4"] .cell[data-c="3"]::after {
+  clip-path: polygon(50% 1%, 57% 25%, 74% 8%, 68% 32%, 92% 26%, 75% 43%, 99% 50%, 75% 57%, 92% 74%, 68% 68%, 74% 92%, 57% 75%, 50% 99%, 43% 75%, 26% 92%, 32% 68%, 8% 75%, 25% 57%, 1% 50%, 25% 43%, 8% 25%, 32% 32%, 25% 8%, 43% 25%);
+  --deco: radial-gradient(circle, #fff 0 10%, rgba(255, 255, 255, 0.5) 11% 18%, transparent 19%);
+}
+
+/* Gold star. */
+[data-style="july4"] .cell[data-c="1"]::after {
+  clip-path: polygon(50% 5%, 62% 37%, 97% 39%, 70% 60%, 79% 94%, 50% 75%, 21% 94%, 30% 60%, 3% 39%, 38% 37%);
+  --deco: radial-gradient(circle at 50% 56%, #fff2a8 0 16%, transparent 17%);
+}
+
+/* Picnic burger. */
+[data-style="july4"] .cell[data-c="2"]::after {
+  clip-path: polygon(20% 12%, 50% 4%, 80% 12%, 94% 30%, 96% 44%, 96% 88%, 88% 96%, 12% 96%, 4% 88%, 4% 44%, 6% 30%);
+  --deco:
+    radial-gradient(ellipse 3% 2% at 36% 22%, #fff4d6 95%, transparent),
+    radial-gradient(ellipse 3% 2% at 56% 16%, #fff4d6 95%, transparent),
+    radial-gradient(ellipse 3% 2% at 66% 30%, #fff4d6 95%, transparent),
+    linear-gradient(transparent 44%, #5fbf4a 44% 54%, #ffd23f 54% 60%, #6b3a1e 60% 76%, transparent 76%);
+}
+
+/* Bunting fan: a navy band over red and white pleats. */
+[data-style="july4"] .cell[data-c="4"]::after {
+  clip-path: polygon(2% 22%, 98% 22%, 95% 46%, 85% 66%, 68% 79%, 50% 84%, 32% 79%, 15% 66%, 5% 46%);
+  --deco:
+    linear-gradient(var(--k) 0 36%, #fff 36% 38%, transparent 38%),
+    radial-gradient(circle at 50% 28%, #fff 4%, transparent 5%) 0 0 / 100% 100% no-repeat,
+    repeating-conic-gradient(from 90deg at 50% 22%, #e8343c 0 15deg, #fff 15deg 30deg);
+}
+
+/* Rocket with a red nose, blue band and flame. */
+[data-style="july4"] .cell[data-c="5"]::after {
+  clip-path: polygon(50% 0, 64% 16%, 64% 64%, 82% 78%, 82% 88%, 64% 82%, 58% 100%, 42% 100%, 36% 82%, 18% 88%, 18% 78%, 36% 64%);
+  --deco:
+    linear-gradient(#e8343c 0 18%, transparent 18% 40%, #3f6fe0 40% 48%, transparent 48% 84%, #ff9a2e 84%),
+    linear-gradient(90deg, #e8343c 0 36%, transparent 36% 64%, #e8343c 64%) 0 100% / 100% 36% no-repeat;
+}
+
+/* Clear: a firework pop. */
+[data-style="july4"] .cell.clearing::after {
+  clip-path: none;
+  background: radial-gradient(circle, #fff 0 12%, transparent 13% 30%, #ffd23f 31% 36%, transparent 37% 52%, #ff4b55 53% 58%, transparent 59%);
+  animation: bubble 220ms ease-out forwards;
+}
+
+[data-style="july4"] .pop { text-shadow: 0 0 8px #ff4b55, 0 2px 4px rgba(0, 0, 0, 0.5); }
+[data-style="july4"] .streak { background: #ff4b55; color: #fff; }
+[data-style="july4"] .sheet { background: #132048; box-shadow: 0 0 0 2px #c8283a; }
