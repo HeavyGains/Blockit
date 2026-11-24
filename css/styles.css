@@ -22,8 +22,8 @@
 /* ---------- Paper stickers (default) ---------- */
 
 [data-style="paper"] {
-  --bg: #efe6d0;
-  --board: #fbf6e8;
+  --bg: #d6c6a2;
+  --board: #ebe0c4;
   --empty: transparent;
   --text: #3b3427;
   --muted: #8a7f68;
@@ -48,7 +48,7 @@
   background-size: var(--cell) var(--cell), var(--cell) var(--cell),
     calc(var(--cell) / 4) calc(var(--cell) / 4), calc(var(--cell) / 4) calc(var(--cell) / 4);
   background-position: 4px 4px;
-  box-shadow: 0 2px 0 #d8ccb0, 0 6px 18px rgba(80, 60, 20, 0.15);
+  box-shadow: 0 2px 0 #b9a77f, 0 6px 18px rgba(80, 60, 20, 0.2);
 }
 
 /* Stickers: rounded, white die-cut edge, a slight lift. */
