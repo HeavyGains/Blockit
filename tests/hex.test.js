@@ -146,3 +146,37 @@ test('Hex Daily Duel: same sets for everyone each day, its own name and scores',
   assert.equal(duelName('hex'), 'Hex Duel');
   assert.equal(shareText('2026-11-24', 1234, 'Jason', 'hex'), 'Blockit Hex Duel 11/24: 1,234 (Jason)');
 });
+
+test('hex specials: a bomb clears its 6 neighbours, a stone cracks, a star counts', async () => {
+  const { resolveHexClear, hexNeighbors } = await import('../js/hex.js');
+  assert.equal(hexNeighbors(0, 0).length, 6);
+  assert.equal(hexNeighbors(4, -4).length, 3, 'a corner has 3');
+  const line = lineCells('r', 0); // the middle row
+  let b = fill(emptyHexBoard(), line);
+  b[HEX_RADIUS][HEX_RADIUS] = { c: 1, s: 'bomb' };   // bomb at 0,0
+  b[HEX_RADIUS - 1][HEX_RADIUS] = 2;                 // 0,-1: a neighbour above
+  b[HEX_RADIUS - 1][HEX_RADIUS + 1] = { c: 3, s: 'bomb' }; // 1,-1: a bomb neighbour, chains
+  b[HEX_RADIUS - 2][HEX_RADIUS + 1] = 4;             // 1,-2: next to the second bomb
+  b[HEX_RADIUS - 3][HEX_RADIUS] = 5;                 // 0,-3: too far, stays
+  b[HEX_RADIUS][HEX_RADIUS + 3] = { c: 1, s: 'stone' };
+  b[HEX_RADIUS][HEX_RADIUS - 3] = { c: 1, s: 'star' };
+  const res = resolveHexClear(b, { q: [], r: [0], s: [] });
+  assert.equal(getCell(res.board, 0, -1), null);
+  assert.equal(getCell(res.board, 1, -1), null);
+  assert.equal(getCell(res.board, 1, -2), null, 'second bomb went off');
+  assert.equal(getCell(res.board, 0, -3), 5);
+  assert.deepEqual(getCell(res.board, 3, 0), { c: 1, s: 'crack' });
+  assert.equal(res.blast, 3);
+  assert.equal(res.stars, 1);
+  assert.equal(res.cracked, 1);
+  assert.equal(res.bombs.length, 2);
+  assert.equal(res.lineCells, 9);
+});
+
+test('Hex Duel with specials has its own sets, with specials', () => {
+  const plain = dailyHexTray('2026-11-24', 0);
+  const sp = Array.from({ length: 8 }, (_, n) => dailyHexTray('2026-11-24', n, null, true));
+  assert.equal(JSON.stringify(dailyHexTray('2026-11-24', 0, null, true)), JSON.stringify(sp[0]));
+  assert.ok(sp.flat().some(p => p.special), 'some special cells across the day');
+  assert.ok(!plain.some(p => p.special));
+});

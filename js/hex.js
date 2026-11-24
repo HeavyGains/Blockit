@@ -13,7 +13,9 @@
 // HEX_RADIUS so they start at 0). Spots outside the hexagon are never used.
 // A cell is null (empty) or a color index, or { c, s } for a special.
 
-import { TRAY_SIZE, COLORS, MAX_REROLLS, CELL_POINTS, CLEAR_POINTS, WIPE_BONUS, STREAK_GRACE, seededRng } from './logic.js?v=41';
+import { TRAY_SIZE, COLORS, MAX_REROLLS, CELL_POINTS, CLEAR_POINTS, WIPE_BONUS, STREAK_GRACE, seededRng,
+  specialOf, addSpecials, SPECIAL_CHANCE, SPECIAL_KINDS,
+} from './logic.js?v=42';
 
 export const HEX_RADIUS = 4;
 const SPAN = HEX_RADIUS * 2 + 1;
@@ -183,8 +185,54 @@ export function dealHexTray(rng = Math.random, board = null) {
 
 // Hex Daily Duel: set number n of the day, the same for everyone (seeded by
 // the date and set number, like Classic's dailyTray, with its own seed).
-export function dailyHexTray(day, n, board = null) {
-  return dealHexTray(seededRng(`blockit-hex-${day}-${n}`), board);
+// With specials (variant 'hex-special') the sets have their own seed, and the
+// specials come from a second seeded rng, like Classic's specials duel.
+export function dailyHexTray(day, n, board = null, specials = false) {
+  const seed = specials ? `blockit-hex-special-${day}-${n}` : `blockit-hex-${day}-${n}`;
+  const tray = dealHexTray(seededRng(seed), board);
+  return specials ? addSpecials(tray, seededRng(`${seed}-specials`), SPECIAL_CHANCE, SPECIAL_KINDS) : tray;
+}
+
+// ---------- Special blocks ----------
+// Same specials as Classic (see resolveClear in logic.js): a bomb also clears
+// the 6 hexes around it (and sets off bombs there), a stone only cracks on its
+// first clear, a star is worth STAR_BONUS. Cells are named "row,col" in the
+// stored board (row = r + HEX_RADIUS, col = q + HEX_RADIUS), like resolveClear.
+
+const NEIGHBORS = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]]; // [dq, dr]
+
+export function hexNeighbors(q, r) {
+  return NEIGHBORS.map(([dq, dr]) => [q + dq, r + dr]).filter(([x, y]) => onBoard(x, y));
+}
+
+const key = (q, r) => `${r + HEX_RADIUS},${q + HEX_RADIUS}`;
+
+export function resolveHexClear(board, lines) {
+  const inLine = new Set(hexClearedCells(lines).map(([q, r]) => key(q, r)));
+  const hit = new Map(hexClearedCells(lines).map(([q, r]) => [key(q, r), [q, r]]));
+  const queue = [...hit.values()];
+  const fired = [];
+  while (queue.length) {
+    const [q, r] = queue.pop();
+    if (specialOf(getCell(board, q, r)) !== 'bomb' || fired.some(([a, b]) => a === q && b === r)) continue;
+    fired.push([q, r]);
+    for (const [x, y] of hexNeighbors(q, r)) {
+      if (!hit.has(key(x, y))) { hit.set(key(x, y), [x, y]); queue.push([x, y]); }
+    }
+  }
+  const next = board.map(line => line.slice());
+  let blast = 0, stars = 0, cracked = 0;
+  for (const [k, [q, r]] of hit) {
+    const v = getCell(board, q, r);
+    if (v === null) continue;
+    const kind = specialOf(v);
+    if (kind === 'stone') { next[r + HEX_RADIUS][q + HEX_RADIUS] = { c: v.c, s: 'crack' }; cracked++; continue; }
+    if (kind === 'star') stars++;
+    if (!inLine.has(k)) blast++;
+    next[r + HEX_RADIUS][q + HEX_RADIUS] = null;
+  }
+  const bombs = fired.map(([q, r]) => [r + HEX_RADIUS, q + HEX_RADIUS]);
+  return { board: next, blast, stars, cracked, hit: [...hit.keys()], lineCells: inLine.size, bombs };
 }
 
 // ---------- Scoring ----------

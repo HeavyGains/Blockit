@@ -6,14 +6,14 @@ import {
   applyGravity, scoreChain, MODES,
   dayKey, dailyTray, shareText, shortDay, duelId, duelName,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=41';
+} from './logic.js?v=42';
 import {
   HEX_RADIUS, emptyHexBoard, canPlaceHex, placeHex, hexFullLines, hexLineCount, hexClearedCells,
-  clearHexLines, fitsAnywhereHex, isHexGameOver, previewHexLines, dealHexTray, scoreHexPlacement, dailyHexTray,
-} from './hex.js?v=41';
-import { online, queueScore, fetchBoard } from './online.js?v=41';
-import { sfx, unlock, setSoundOn } from './sound.js?v=41';
-import { haptic, setHapticsOn } from './haptics.js?v=41';
+  fitsAnywhereHex, isHexGameOver, previewHexLines, dealHexTray, scoreHexPlacement, dailyHexTray, resolveHexClear,
+} from './hex.js?v=42';
+import { online, queueScore, fetchBoard } from './online.js?v=42';
+import { sfx, unlock, setSoundOn } from './sound.js?v=42';
+import { haptic, setHapticsOn } from './haptics.js?v=42';
 
 const LIFT = 84;      // px the dragged piece floats above the finger, so it stays visible
 const GAIN = 1.4;     // the piece travels 1.4x the finger's movement, so short swipes reach the far side
@@ -75,10 +75,9 @@ if (store.get('blockit.mode') === 'daily') {
 }
 let mode = MODES.some(m => m.id === store.get('blockit.mode')) ? store.get('blockit.mode') : 'classic';
 const gravity = () => mode === 'gravity';
-// Hex: a hexagon board where lines clear 3 ways (rules in hex.js). No specials
-// or tricky sets in Hex yet; its Daily Duel is 'daily-hex'.
+// Hex: a hexagon board where lines clear 3 ways (rules in hex.js). Specials
+// work as in Classic (a bomb blasts the 6 hexes around it); no tricky sets.
 const hex = () => mode === 'hex';
-if (hex()) specials = false;
 let soundOn = store.get('blockit.sound', true) !== false;
 setSoundOn(soundOn);
 let hapticsOn = store.get('blockit.haptics', true) !== false;
@@ -315,11 +314,6 @@ const G = {
   },
 };
 
-// Hex clears have no specials: every cell in the lines just empties.
-function hexResolve(b, lines) {
-  const hit = G.lineSpots(lines).map(([r, c]) => `${r},${c}`);
-  return { board: clearHexLines(b, lines), blast: 0, stars: 0, cracked: 0, hit, lineCells: hit.length, bombs: [] };
-}
 
 // A hex cell's top-left, in cell widths, from its [q, r] (rows shift half a cell).
 const hexXY = (q, r) => [q + r / 2, r * HEX_ROW];
@@ -480,9 +474,9 @@ function dealNext() {
   if (daily()) {
     setNo++;
     trickSet = false;
-    return hex() ? dailyHexTray(day, setNo, board) : dailyTray(day, setNo, board, variant());
+    return hex() ? dailyHexTray(day, setNo, board, specials) : dailyTray(day, setNo, board, variant());
   }
-  if (hex()) { trickSet = false; return G.deal(board); }
+  if (hex()) { trickSet = false; return specials ? withSpecials(G.deal(board)) : G.deal(board); }
   // Trick sets are solved with Classic rules, so they only come in Classic.
   if (specials) return withSpecials(dealTray(Math.random, board));
   const trick = !gravity() && Math.random() < TRICK_CHANCE ? dealTrickTray(Math.random, board) : null;
@@ -633,8 +627,9 @@ function placePiece(index, piece, row, col) {
 // Flash the full lines (and any bomb blasts), then empty them. Stones only
 // crack. Returns what the specials did, for scoring.
 async function clearWithFlash(lines) {
-  const res = hex() ? hexResolve(board, lines) : resolveClear(board, lines);
-  const inLine = (r, c) => lines.rows.includes(r) || lines.cols.includes(c);
+  const res = hex() ? resolveHexClear(board, lines) : resolveClear(board, lines);
+  const lineSet = new Set(G.lineSpots(lines).map(([r, c]) => `${r},${c}`));
+  const inLine = (r, c) => lineSet.has(`${r},${c}`);
   for (const key of res.hit) {
     const [r, c] = key.split(',').map(Number);
     const el = cells[r * side() + c];
@@ -657,7 +652,7 @@ async function clearWithFlash(lines) {
 // outward as debris. The board shakes and Android phones buzz.
 
 function cellCenter(r, c) {
-  const el = cells[r * SIZE + c];
+  const el = cells[r * side() + c];
   return { x: el.offsetLeft + el.offsetWidth / 2, y: el.offsetTop + el.offsetHeight / 2, size: el.offsetWidth };
 }
 
@@ -691,18 +686,24 @@ function blastAt(br, bc, res) {
     fx.append(spark);
   }
   // Debris: the blocks around this bomb fly away from it, tumbling.
+  // In Hex, the neighbours are the 6 hexes around it.
+  const near = (r, c) => (hex()
+    ? [[0, 1], [-1, 1], [-1, 0], [0, -1], [1, -1], [1, 0], [0, 0]].some(([a, b]) => r - br === a && c - bc === b)
+    : Math.abs(r - br) <= 1 && Math.abs(c - bc) <= 1);
   for (const key of res.hit) {
     const [r, c] = key.split(',').map(Number);
-    if (Math.abs(r - br) > 1 || Math.abs(c - bc) > 1) continue;
-    const el = cells[r * SIZE + c];
+    if (!near(r, c)) continue;
+    const el = cells[r * side() + c];
     if (!el.dataset.c || el.dataset.s === 'stone') continue;
     const chunk = document.createElement('i');
     chunk.className = 'debris';
     chunk.style.background = getComputedStyle(el).getPropertyValue('--k');
-    const dx = (c - bc || (Math.random() - 0.5)) * size * (1.8 + Math.random());
-    const dy = (r - br || (Math.random() - 0.5)) * size * (1.8 + Math.random()) - size * 0.8;
-    chunk.style.setProperty('--x0', `${(c - bc) * size}px`);
-    chunk.style.setProperty('--y0', `${(r - br) * size}px`);
+    const at = cellCenter(r, c);
+    const ux = (at.x - x) / size, uy = (at.y - y) / size; // offset from the bomb, in cells
+    const dx = (ux || (Math.random() - 0.5)) * size * (1.8 + Math.random());
+    const dy = (uy || (Math.random() - 0.5)) * size * (1.8 + Math.random()) - size * 0.8;
+    chunk.style.setProperty('--x0', `${at.x - x}px`);
+    chunk.style.setProperty('--y0', `${at.y - y}px`);
     chunk.style.setProperty('--dx', `${dx}px`);
     chunk.style.setProperty('--dy', `${dy}px`);
     chunk.style.setProperty('--rot', `${(Math.random() - 0.5) * 720}deg`);
@@ -906,7 +907,7 @@ function newGame() {
   if (daily()) {
     day = dayKey();
     setNo = 0;
-    tray = hex() ? dailyHexTray(day, 0) : dailyTray(day, 0, null, variant());
+    tray = hex() ? dailyHexTray(day, 0, null, specials) : dailyTray(day, 0, null, variant());
     // One try a day: if this player already played today, show their result.
     const done = dailyScores()[player];
     if (done !== undefined) {
@@ -917,7 +918,7 @@ function newGame() {
       return;
     }
   } else {
-    tray = specials ? withSpecials(dealTray()) : G.deal(null);
+    tray = specials ? withSpecials(G.deal(null)) : G.deal(null);
   }
   saveGame();
   draw();
@@ -969,10 +970,6 @@ function switchGame() {
 const specialsBtn = document.getElementById('specials');
 const duelBtn = document.getElementById('duel');
 function drawSpecials() {
-  // Hex has no special blocks yet.
-  const hexPick = pick.mode === 'hex';
-  if (hexPick) pick.specials = false;
-  specialsBtn.disabled = hexPick;
   specialsBtn.setAttribute('aria-pressed', String(pick.specials));
   specialsBtn.querySelector('b').textContent = pick.specials ? 'On' : 'Off';
   duelBtn.setAttribute('aria-pressed', String(pick.duel));
@@ -1049,6 +1046,7 @@ const BOARD_GAMES = [
   { id: 'classic-special', name: 'Classic ✦' },
   { id: 'gravity-special', name: 'Gravity ✦' },
   { id: 'hex', name: 'Hex' },
+  { id: 'hex-special', name: 'Hex ✦' },
 ];
 const BOARD_KINDS = [
   { id: 'best', name: 'Best' },
