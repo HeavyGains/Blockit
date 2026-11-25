@@ -6,15 +6,15 @@ import {
   applyGravity, scoreChain, MODES,
   dayKey, dailyTray, shareText, shortDay, duelId, duelName,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=50';
+} from './logic.js?v=51';
 import {
   HEX_RADIUS, emptyHexBoard, canPlaceHex, placeHex, hexFullLines, hexLineCount, hexClearedCells,
   fitsAnywhereHex, isHexGameOver, previewHexLines, dealHexTray, scoreHexPlacement, dailyHexTray, resolveHexClear,
   applyHexGravity, scoreHexChain,
-} from './hex.js?v=50';
-import { online, queueScore, fetchBoard } from './online.js?v=50';
-import { sfx, unlock, setSoundOn } from './sound.js?v=50';
-import { haptic, setHapticsOn } from './haptics.js?v=50';
+} from './hex.js?v=51';
+import { online, queueScore, fetchBoard } from './online.js?v=51';
+import { sfx, unlock, setSoundOn } from './sound.js?v=51';
+import { haptic, setHapticsOn } from './haptics.js?v=51';
 
 const LIFT = 84;      // px the dragged piece floats above the finger, so it stays visible
 const GAIN = 1.4;     // the piece travels 1.4x the finger's movement, so short swipes reach the far side
@@ -1005,7 +1005,6 @@ function modePic(id) {
 }
 
 function drawModes() {
-  document.getElementById('modeabout').textContent = MODES.find(m => m.id === pick.mode).about;
   modeListEl.replaceChildren(...MODES.map(m => {
     const b = document.createElement('button');
     b.type = 'button';
