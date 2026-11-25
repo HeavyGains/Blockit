@@ -15,7 +15,7 @@
 
 import { TRAY_SIZE, COLORS, MAX_REROLLS, CELL_POINTS, CLEAR_POINTS, WIPE_BONUS, STREAK_GRACE, seededRng,
   specialOf, addSpecials, SPECIAL_CHANCE, SPECIAL_KINDS,
-} from './logic.js?v=48';
+} from './logic.js?v=49';
 
 export const HEX_RADIUS = 4;
 const SPAN = HEX_RADIUS * 2 + 1;
@@ -139,8 +139,14 @@ export function clearHexLines(board, lines) {
   return next;
 }
 
+// The piece's [0, 0] is the corner of its bounding box, which isn't always one
+// of its cells, so it can sit just off the board while every cell is on it.
+// Try every spot within a board's width, not only the board's own cells.
 export function fitsAnywhereHex(board, piece) {
-  return HEX_CELLS.some(([q, r]) => canPlaceHex(board, piece, q, r));
+  for (let r = -2 * HEX_RADIUS; r <= HEX_RADIUS; r++) {
+    for (let q = -2 * HEX_RADIUS; q <= HEX_RADIUS; q++) if (canPlaceHex(board, piece, q, r)) return true;
+  }
+  return false;
 }
 
 // Game over when no piece still in the tray (null = placed) fits anywhere.
