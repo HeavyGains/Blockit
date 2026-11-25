@@ -15,7 +15,7 @@
 
 import { TRAY_SIZE, COLORS, MAX_REROLLS, CELL_POINTS, CLEAR_POINTS, WIPE_BONUS, STREAK_GRACE, seededRng,
   specialOf, addSpecials, SPECIAL_CHANCE, SPECIAL_KINDS,
-} from './logic.js?v=46';
+} from './logic.js?v=47';
 
 export const HEX_RADIUS = 4;
 const SPAN = HEX_RADIUS * 2 + 1;
@@ -187,8 +187,9 @@ export function dealHexTray(rng = Math.random, board = null) {
 // the date and set number, like Classic's dailyTray, with its own seed).
 // With specials (variant 'hex-special') the sets have their own seed, and the
 // specials come from a second seeded rng, like Classic's specials duel.
-export function dailyHexTray(day, n, board = null, specials = false) {
-  const seed = specials ? `blockit-hex-special-${day}-${n}` : `blockit-hex-${day}-${n}`;
+// game: 'hex' or 'hexgravity'; each has its own pieces.
+export function dailyHexTray(day, n, board = null, specials = false, game = 'hex') {
+  const seed = specials ? `blockit-${game}-special-${day}-${n}` : `blockit-${game}-${day}-${n}`;
   const tray = dealHexTray(seededRng(seed), board);
   return specials ? addSpecials(tray, seededRng(`${seed}-specials`), SPECIAL_CHANCE, SPECIAL_KINDS) : tray;
 }
@@ -326,4 +327,14 @@ export function playHexGravityMove(board, piece, q, r) {
     next = applyHexGravity(clearHexLines(next, lines)).board;
   }
   return { board: next, clears };
+}
+
+// Points for the 2nd, 3rd... clear of a chain (chain = 2, 3...), like
+// scoreChain in logic.js: a normal clear, times the chain step on top.
+export function scoreHexChain(state, lines, chain, wiped = false) {
+  const count = hexLineCount(lines);
+  const clear = CLEAR_POINTS * hexClearedCells(lines).length * count * Math.max(state.streak, 1) * chain;
+  const bonus = wiped ? WIPE_BONUS : 0;
+  const gained = clear + bonus;
+  return { ...state, score: state.score + gained, gained, clear, bonus, lines: count, chain };
 }

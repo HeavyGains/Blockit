@@ -331,6 +331,7 @@ export const MODES = [
   { id: 'classic', name: 'Classic', about: 'Fill rows and columns to clear them.' },
   { id: 'gravity', name: 'Gravity', about: 'After a clear, blocks fall down. Set off chain reactions!' },
   { id: 'hex', name: 'Hex', about: 'A hexagon board. Lines clear 3 ways.' },
+  { id: 'hexgravity', name: 'Hex Gravity', about: 'Hex, but after a clear, blocks pour down like sand. Chain reactions!' },
 ];
 
 // ---------- Special blocks ----------
@@ -455,7 +456,8 @@ export const duelId = variant => (variant === 'classic' ? 'daily' : `daily-${var
 
 // 'Gravity Duel ✦' for 'gravity-special' (✦ = special blocks, as on the scoreboard).
 export function duelName(variant) {
-  const name = variant.startsWith('gravity') ? 'Gravity Duel' : variant.startsWith('hex') ? 'Hex Duel' : 'Daily Duel';
+  const name = variant.startsWith('gravity') ? 'Gravity Duel' : variant.startsWith('hexgravity') ? 'Hex Gravity Duel'
+    : variant.startsWith('hex') ? 'Hex Duel' : 'Daily Duel';
   return variant.endsWith('-special') ? `${name} ✦` : name;
 }
 
