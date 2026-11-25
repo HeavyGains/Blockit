@@ -180,3 +180,13 @@ test('Hex Duel with specials has its own sets, with specials', () => {
   assert.ok(sp.flat().some(p => p.special), 'some special cells across the day');
   assert.ok(!plain.some(p => p.special));
 });
+
+test('a piece fits even when its corner [0, 0] would be off the board', () => {
+  const bar = HEX_PIECES.find(p => p.id === 'bar2-2'); // cells [1,0] and [0,1], no [0,0]
+  const open = [[0, -HEX_RADIUS], [-1, -HEX_RADIUS + 1]];
+  const b = fill(emptyHexBoard(), HEX_CELLS.filter(([q, r]) => !open.some(([a, c]) => a === q && c === r)));
+  assert.equal(onBoard(-1, -HEX_RADIUS), false);
+  assert.equal(canPlaceHex(b, bar, -1, -HEX_RADIUS), true);
+  assert.equal(fitsAnywhereHex(b, bar), true);
+  assert.equal(isHexGameOver(b, [bar, null, null]), false);
+});
