@@ -25,12 +25,11 @@ test('a lone block falls to the bottom row, zig-zagging near its column', () => 
   assert.deepEqual(paths[0].path.at(-1), [q, r]);
 });
 
-test('a block on the slanted lower edge slides along it to the bottom row', () => {
+test('a block on the slanted lower edge stays put (the edge holds it)', () => {
   const b = emptyHexBoard();
   set(b, -R, 0, 1); // far left corner: down-left is off the board
-  const { board } = applyHexGravity(b);
-  assert.equal(getCell(board, -R, 0), null);
-  assert.equal(HEX_CELLS.filter(([q, r]) => getCell(board, q, r) === 1)[0][1], R);
+  assert.equal(hexFallStep(b, -R, 0), null);
+  assert.equal(getCell(applyHexGravity(b).board, -R, 0), 1);
 });
 
 test('a block rests when both cells below are filled', () => {
@@ -41,22 +40,29 @@ test('a block rests when both cells below are filled', () => {
   assert.equal(getCell(applyHexGravity(b).board, 0, R - 1), 2);
 });
 
-test('a block with one side free slides off that side', () => {
+test('a block with something under just one side stays put', () => {
   const b = emptyHexBoard();
-  set(b, 0, 2, 1);  // down-right of (0,1) is filled
+  set(b, 0, 2, 1);  // down-right of (0,1) is filled, down-left is empty
   set(b, 0, 1, 2);
-  assert.deepEqual(hexFallStep(b, 0, 1), [-1, 2]);
+  assert.equal(hexFallStep(b, 0, 1), null);
 });
 
-test('blocks fill the bottom row like sand, nothing is lost', () => {
+test('a block with nothing under it falls into the gap', () => {
+  const b = emptyHexBoard();
+  set(b, 0, 1, 2); // r = 1 is odd: goes down-right first
+  assert.deepEqual(hexFallStep(b, 0, 1), [0, 2]);
+});
+
+test('blocks settle without being lost, and the board stays mostly in place', () => {
   const b = emptyHexBoard();
   const top = HEX_CELLS.filter(([, r]) => r <= -2);
   top.forEach(([q, r]) => set(b, q, r, 3));
-  const { board } = applyHexGravity(b);
+  const { board, paths } = applyHexGravity(b);
   assert.equal(count(board), top.length);
-  // settled: nothing can move any more
   assert.ok(HEX_CELLS.every(([q, r]) => hexFallStep(board, q, r) === null));
-  assert.ok(lineCells('r', R).every(([q, r]) => getCell(board, q, r) !== null));
+  // A solid clump only drops as a whole: its bottom row falls, and the rest follows.
+  assert.ok(paths.length > 0);
+  assert.ok(lineCells('r', R).some(([q, r]) => getCell(board, q, r) === null));
 });
 
 test('an anchor never moves and holds the blocks touching it', () => {
@@ -85,7 +91,7 @@ test('Hex Gravity move: a clear lets blocks fall and can chain', () => {
   const bottom = lineCells('r', R);
   // bottom row full except its last cell, which the 1-cell piece fills
   bottom.slice(0, -1).forEach(([q, r]) => set(b, q, r, 1));
-  set(b, 0, -R, 2);
+  set(b, R / 2, -R, 2); // top middle: falls straight down once the bottom row clears
   const dot = HEX_PIECES.find(p => p.cells.length === 1);
   const [q, r] = bottom.at(-1);
   const { board, clears } = playHexGravityMove(b, dot, q, r);
