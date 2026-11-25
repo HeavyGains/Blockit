@@ -93,3 +93,29 @@ test('Hex Gravity move: a clear lets blocks fall and can chain', () => {
   assert.equal(count(board), 1);
   assert.equal(HEX_CELLS.find(([x, y]) => getCell(board, x, y) === 2)[1], R);
 });
+
+test('Hex Gravity chain points grow with the chain step', async () => {
+  const { scoreHexChain, hexFullLines } = await import('../js/hex.js');
+  const b = emptyHexBoard();
+  for (const [q, r] of lineCells('r', R)) set(b, q, r, 1);
+  const lines = hexFullLines(b);
+  const st = { score: 100, streak: 1, miss: 0 };
+  const two = scoreHexChain(st, lines, 2), three = scoreHexChain(st, lines, 3);
+  assert.equal(two.lines, 1);
+  assert.equal(three.gained, two.gained * 3 / 2);
+  assert.equal(scoreHexChain(st, lines, 2, true).bonus > 0, true);
+});
+
+test('Hex Gravity has its own Daily Duel pieces and name', async () => {
+  const { dailyHexTray } = await import('../js/hex.js');
+  const { duelName, duelId } = await import('../js/logic.js');
+  const ids = t => t.map(p => p.id).join();
+  const hexDays = [0, 1, 2, 3].map(n => ids(dailyHexTray('2026-11-25', n)));
+  const gravDays = [0, 1, 2, 3].map(n => ids(dailyHexTray('2026-11-25', n, null, false, 'hexgravity')));
+  assert.notDeepEqual(gravDays, hexDays);
+  assert.deepEqual(ids(dailyHexTray('2026-11-25', 0)), ids(dailyHexTray('2026-11-25', 0, null, false, 'hex')));
+  assert.equal(duelName('hexgravity'), 'Hex Gravity Duel');
+  assert.equal(duelName('hexgravity-special'), 'Hex Gravity Duel ✦');
+  assert.equal(duelName('hex'), 'Hex Duel');
+  assert.equal(duelId('hexgravity'), 'daily-hexgravity');
+});

@@ -6,20 +6,22 @@ import {
   applyGravity, scoreChain, MODES,
   dayKey, dailyTray, shareText, shortDay, duelId, duelName,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=46';
+} from './logic.js?v=47';
 import {
   HEX_RADIUS, emptyHexBoard, canPlaceHex, placeHex, hexFullLines, hexLineCount, hexClearedCells,
   fitsAnywhereHex, isHexGameOver, previewHexLines, dealHexTray, scoreHexPlacement, dailyHexTray, resolveHexClear,
-} from './hex.js?v=46';
-import { online, queueScore, fetchBoard } from './online.js?v=46';
-import { sfx, unlock, setSoundOn } from './sound.js?v=46';
-import { haptic, setHapticsOn } from './haptics.js?v=46';
+  applyHexGravity, scoreHexChain,
+} from './hex.js?v=47';
+import { online, queueScore, fetchBoard } from './online.js?v=47';
+import { sfx, unlock, setSoundOn } from './sound.js?v=47';
+import { haptic, setHapticsOn } from './haptics.js?v=47';
 
 const LIFT = 84;      // px the dragged piece floats above the finger, so it stays visible
 const GAIN = 1.4;     // the piece travels 1.4x the finger's movement, so short swipes reach the far side
 const CLEAR_MS = 220; // matches the pop animation in style.css
 const BLAST_MS = 560; // a clear with a bomb in it takes a little longer
 const FALL_MS = 260;  // matches the fall animation in style.css
+const HEX_FALL_MS = 300; // Hex Gravity's shortest fall; longer falls take a bit longer
 const CHAIN_PAUSE = 120; // beat between a landing and the next clear
 const wait = ms => new Promise(res => setTimeout(res, ms));
 
@@ -77,7 +79,11 @@ let mode = MODES.some(m => m.id === store.get('blockit.mode')) ? store.get('bloc
 const gravity = () => mode === 'gravity';
 // Hex: a hexagon board where lines clear 3 ways (rules in hex.js). Specials
 // work as in Classic (a bomb blasts the 6 hexes around it); no tricky sets.
-const hex = () => mode === 'hex';
+const hex = () => mode === 'hex' || mode === 'hexgravity';
+// Hex Gravity: Hex, where blocks pour down like sand after a clear (hex.js).
+const hexGravity = () => mode === 'hexgravity';
+// Either kind of Gravity: blocks fall after a clear, and chains score more.
+const anyGravity = () => gravity() || hexGravity();
 let soundOn = store.get('blockit.sound', true) !== false;
 setSoundOn(soundOn);
 let hapticsOn = store.get('blockit.haptics', true) !== false;
@@ -476,7 +482,7 @@ function dealNext() {
   if (daily()) {
     setNo++;
     trickSet = false;
-    return hex() ? dailyHexTray(day, setNo, board, specials) : dailyTray(day, setNo, board, variant());
+    return hex() ? dailyHexTray(day, setNo, board, specials, mode) : dailyTray(day, setNo, board, variant());
   }
   if (hex()) { trickSet = false; return specials ? withSpecials(G.deal(board)) : G.deal(board); }
   // Trick sets are solved with Classic rules, so they only come in Classic.
@@ -728,7 +734,7 @@ function addSpecialPoints(res) {
 // fill clear too, again and again (a chain), each step worth more.
 async function resolveClears(piece, row, col, lines) {
   const res = await clearWithFlash(lines);
-  if (!gravity()) {
+  if (!anyGravity()) {
     score = G.score(score, piece.cells.length, lines, boardEmpty(board));
     addSpecialPoints(res);
     showPop(piece, row, col, score);
@@ -737,18 +743,18 @@ async function resolveClears(piece, row, col, lines) {
     return;
   }
   await drop();
-  score = scorePlacement(score, piece.cells.length, lines, boardEmpty(board));
+  score = G.score(score, piece.cells.length, lines, boardEmpty(board));
   addSpecialPoints(res);
   showPop(piece, row, col, score);
   cheer(score);
   saveBest();
   for (let chain = 2; ; chain++) {
-    const next = fullLines(board);
-    if (!next.rows.length && !next.cols.length) break;
+    const next = G.fullLines(board);
+    if (!G.count(next)) break;
     await wait(CHAIN_PAUSE);
     const step = await clearWithFlash(next);
     await drop();
-    score = scoreChain(score, next, chain, boardEmpty(board));
+    score = (hex() ? scoreHexChain : scoreChain)(score, next, chain, boardEmpty(board));
     addSpecialPoints(step);
     showChainPop(next, score);
     if (score.bonus) { sfx.fanfare(); haptic.fanfare(); } else { sfx.combo(chain); haptic.combo(); }
@@ -764,6 +770,7 @@ function cheer(result) {
 
 // Let every block fall, with each one sliding down from where it was.
 async function drop(onlyCols = null) {
+  if (hex()) return dropHex();
   const { board: next, falls } = applyGravity(board, onlyCols);
   board = next;
   drawBoard();
@@ -780,8 +787,37 @@ async function drop(onlyCols = null) {
   for (const el of cells) { el.classList.remove('falling'); el.style.removeProperty('--fall'); }
 }
 
+// Hex Gravity: every block that moved slides from where it started to where
+// it landed. The whole cell moves (a hex cell clips anything drawn outside it).
+async function dropHex() {
+  const { board: next, paths, ticks } = applyHexGravity(board);
+  board = next;
+  drawBoard();
+  if (!paths.length) return;
+  const ms = Math.min(HEX_FALL_MS + ticks * 25, 2 * HEX_FALL_MS);
+  boardEl.style.setProperty('--fall-ms', `${ms}ms`);
+  for (const { from: [q0, r0], path } of paths) {
+    const [q, r] = path.at(-1);
+    const [x0, y0] = hexXY(q0, r0), [x, y] = hexXY(q, r);
+    const el = cells[(r + HR) * side() + q + HR];
+    el.style.setProperty('--fx', x0 - x);
+    el.style.setProperty('--fy', y0 - y);
+    el.classList.add('hexfalling');
+  }
+  await wait(ms);
+  for (const el of cells) {
+    el.classList.remove('hexfalling');
+    el.style.removeProperty('--fx');
+    el.style.removeProperty('--fy');
+  }
+}
+
 // Pop for a chain step, in the middle of the lines it cleared.
 function showChainPop(lines, result) {
+  if (hex()) {
+    const spots = hexClearedCells(lines);
+    return showPop({ cells: spots }, HR, HR, result);
+  }
   const mid = list => (list.length ? list.reduce((a, b) => a + b, 0) / list.length : (SIZE - 1) / 2);
   const fake = { cells: [[0, 0]] };
   showPop(fake, mid(lines.rows), mid(lines.cols), result);
@@ -909,7 +945,7 @@ function newGame() {
   if (daily()) {
     day = dayKey();
     setNo = 0;
-    tray = hex() ? dailyHexTray(day, 0, null, specials) : dailyTray(day, 0, null, variant());
+    tray = hex() ? dailyHexTray(day, 0, null, specials, mode) : dailyTray(day, 0, null, variant());
     // One try a day: if this player already played today, show their result.
     const done = dailyScores()[player];
     if (done !== undefined) {
@@ -1049,6 +1085,8 @@ const BOARD_GAMES = [
   { id: 'gravity-special', name: 'Gravity ✦' },
   { id: 'hex', name: 'Hex' },
   { id: 'hex-special', name: 'Hex ✦' },
+  { id: 'hexgravity', name: 'Hex Gravity' },
+  { id: 'hexgravity-special', name: 'Hex Gravity ✦' },
 ];
 const BOARD_KINDS = [
   { id: 'best', name: 'Best' },
