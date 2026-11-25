@@ -6,15 +6,15 @@ import {
   applyGravity, scoreChain, MODES,
   dayKey, dailyTray, shareText, shortDay, duelId, duelName,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=49';
+} from './logic.js?v=50';
 import {
   HEX_RADIUS, emptyHexBoard, canPlaceHex, placeHex, hexFullLines, hexLineCount, hexClearedCells,
   fitsAnywhereHex, isHexGameOver, previewHexLines, dealHexTray, scoreHexPlacement, dailyHexTray, resolveHexClear,
   applyHexGravity, scoreHexChain,
-} from './hex.js?v=49';
-import { online, queueScore, fetchBoard } from './online.js?v=49';
-import { sfx, unlock, setSoundOn } from './sound.js?v=49';
-import { haptic, setHapticsOn } from './haptics.js?v=49';
+} from './hex.js?v=50';
+import { online, queueScore, fetchBoard } from './online.js?v=50';
+import { sfx, unlock, setSoundOn } from './sound.js?v=50';
+import { haptic, setHapticsOn } from './haptics.js?v=50';
 
 const LIFT = 84;      // px the dragged piece floats above the finger, so it stays visible
 const GAIN = 1.4;     // the piece travels 1.4x the finger's movement, so short swipes reach the far side
@@ -979,7 +979,33 @@ const modesEl = document.getElementById('modes');
 const modeListEl = document.getElementById('modelist');
 let pick = { mode, specials, duel };
 
+// A little picture of each mode, drawn in the current style's colors.
+// Digits are piece colors, '.' is an open cell, 'f' marks the falling block.
+const MODE_PICS = {
+  classic:    ['00.3', '0..3', '2222', '..13'],
+  gravity:    ['.f..', '....', '1.55', '1225'],
+  hex:        ['03..', '.33.', '2..1', '221.'],
+  hexgravity: ['.f..', '....', '1.5.', '1255'],
+};
+function modePic(id) {
+  const pic = document.createElement('div');
+  pic.className = `mode-pic ${id.startsWith('hex') ? 'hx' : 'sq'}`;
+  pic.setAttribute('aria-hidden', 'true');
+  for (const line of MODE_PICS[id]) {
+    const row = document.createElement('div');
+    for (const ch of line) {
+      const i = document.createElement('i');
+      if (ch === 'f') { i.dataset.c = '4'; i.className = 'fall'; }
+      else if (ch !== '.') i.dataset.c = ch;
+      row.append(i);
+    }
+    pic.append(row);
+  }
+  return pic;
+}
+
 function drawModes() {
+  document.getElementById('modeabout').textContent = MODES.find(m => m.id === pick.mode).about;
   modeListEl.replaceChildren(...MODES.map(m => {
     const b = document.createElement('button');
     b.type = 'button';
@@ -989,6 +1015,7 @@ function drawModes() {
     name.textContent = m.name;
     const about = document.createElement('span');
     about.textContent = m.about;
+    if (MODE_PICS[m.id]) b.append(modePic(m.id));
     b.append(name, about);
     b.addEventListener('click', () => {
       pick.mode = m.id;
