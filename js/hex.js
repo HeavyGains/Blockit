@@ -15,7 +15,7 @@
 
 import { TRAY_SIZE, COLORS, MAX_REROLLS, CELL_POINTS, CLEAR_POINTS, WIPE_BONUS, STREAK_GRACE, seededRng,
   specialOf, addSpecials, SPECIAL_CHANCE, SPECIAL_KINDS,
-} from './logic.js?v=47';
+} from './logic.js?v=48';
 
 export const HEX_RADIUS = 4;
 const SPAN = HEX_RADIUS * 2 + 1;
@@ -257,13 +257,14 @@ export function scoreHexPlacement(state, placed, lines, wiped = false) {
   return { score: state.score + gained, streak, miss, gained, clear, bonus, lines: count };
 }
 
-// ---------- Hex Gravity (Plinko) ----------
+// ---------- Hex Gravity ----------
 // A hex cell has no cell straight below it, only one down-left [q-1, r+1] and
-// one down-right [q, r+1]. After a clear, blocks fall one step at a time:
-// - if both cells below are empty, the block zig-zags: on even rows it goes
-//   down-left, on odd rows down-right, so it falls roughly straight down;
-// - if just one is empty, it slides off into that one;
-// - it rests when both are filled or off the board (the board's edge is a wall).
+// one down-right [q, r+1]. After a clear, blocks fall one step at a time
+// ("Brick" rule, after Jason found sand-like sliding drained the board):
+// - a block rests if either cell below is filled or off the board (so blocks
+//   along the board's lower edges stay put);
+// - if both are empty, it zig-zags: on even rows it goes down-left, on odd
+//   rows down-right, so it falls roughly straight down.
 // An anchor never moves, and a block touching an anchor stays put too.
 // Each tick every block moves at most once, lowest rows first.
 
@@ -279,10 +280,8 @@ export function hexFallStep(board, q, r) {
   if (v === null || specialOf(v) === 'anchor' || heldByAnchor(board, q, r)) return null;
   const [left, right] = below(q, r);
   const l = isOpen(board, ...left), rt = isOpen(board, ...right);
-  if (l && rt) return ((r % 2) + 2) % 2 === 0 ? left : right;
-  if (l) return left;
-  if (rt) return right;
-  return null;
+  if (!l || !rt) return null;
+  return ((r % 2) + 2) % 2 === 0 ? left : right;
 }
 
 // Returns { board, paths, ticks }: the settled board; for every block that
