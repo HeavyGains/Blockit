@@ -1,0 +1,95 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  HEX_RADIUS, HEX_CELLS, emptyHexBoard, getCell, onBoard, lineCells,
+  applyHexGravity, hexFallStep, playHexGravityMove, HEX_PIECES,
+} from '../js/hex.js';
+
+const R = HEX_RADIUS;
+const set = (b, q, r, v) => { b[r + R][q + R] = v; };
+const count = b => HEX_CELLS.filter(([q, r]) => getCell(b, q, r) !== null).length;
+const anchor = { c: 0, s: 'anchor' };
+
+test('a lone block falls to the bottom row, zig-zagging near its column', () => {
+  const b = emptyHexBoard();
+  set(b, R / 2, -R, 7); // top middle
+  const { board, paths, ticks } = applyHexGravity(b);
+  const landed = HEX_CELLS.filter(([q, r]) => getCell(board, q, r) === 7);
+  assert.equal(landed.length, 1);
+  const [q, r] = landed[0];
+  assert.equal(r, R); // bottom row
+  assert.ok(Math.abs(q + r / 2) <= 0.5); // ended up right under where it started
+  assert.equal(ticks, 2 * R);
+  assert.equal(paths.length, 1);
+  assert.deepEqual(paths[0].from, [R / 2, -R]);
+  assert.deepEqual(paths[0].path.at(-1), [q, r]);
+});
+
+test('a block on the slanted lower edge slides along it to the bottom row', () => {
+  const b = emptyHexBoard();
+  set(b, -R, 0, 1); // far left corner: down-left is off the board
+  const { board } = applyHexGravity(b);
+  assert.equal(getCell(board, -R, 0), null);
+  assert.equal(HEX_CELLS.filter(([q, r]) => getCell(board, q, r) === 1)[0][1], R);
+});
+
+test('a block rests when both cells below are filled', () => {
+  const b = emptyHexBoard();
+  for (const [q, r] of lineCells('r', R)) set(b, q, r, 1);
+  set(b, 0, R - 1, 2);
+  assert.equal(hexFallStep(b, 0, R - 1), null);
+  assert.equal(getCell(applyHexGravity(b).board, 0, R - 1), 2);
+});
+
+test('a block with one side free slides off that side', () => {
+  const b = emptyHexBoard();
+  set(b, 0, 2, 1);  // down-right of (0,1) is filled
+  set(b, 0, 1, 2);
+  assert.deepEqual(hexFallStep(b, 0, 1), [-1, 2]);
+});
+
+test('blocks fill the bottom row like sand, nothing is lost', () => {
+  const b = emptyHexBoard();
+  const top = HEX_CELLS.filter(([, r]) => r <= -2);
+  top.forEach(([q, r]) => set(b, q, r, 3));
+  const { board } = applyHexGravity(b);
+  assert.equal(count(board), top.length);
+  // settled: nothing can move any more
+  assert.ok(HEX_CELLS.every(([q, r]) => hexFallStep(board, q, r) === null));
+  assert.ok(lineCells('r', R).every(([q, r]) => getCell(board, q, r) !== null));
+});
+
+test('an anchor never moves and holds the blocks touching it', () => {
+  const b = emptyHexBoard();
+  set(b, 0, 0, anchor);
+  set(b, 1, -1, 4); // touching the anchor (up-right)
+  set(b, 0, -3, 5); // not touching
+  const { board } = applyHexGravity(b);
+  assert.deepEqual(getCell(board, 0, 0), anchor);
+  assert.equal(getCell(board, 1, -1), 4);
+  assert.equal(getCell(board, 0, -3), null);
+});
+
+test('a block that lands next to an anchor sticks there', () => {
+  const b = emptyHexBoard();
+  set(b, 0, 2, anchor);
+  set(b, 2, -2, 6); // zig-zags straight down onto the anchor's top
+  const { board } = applyHexGravity(b);
+  const at = HEX_CELLS.find(([q, r]) => getCell(board, q, r) === 6);
+  assert.ok(at[1] < 2);
+  assert.ok(onBoard(...at));
+});
+
+test('Hex Gravity move: a clear lets blocks fall and can chain', () => {
+  const b = emptyHexBoard();
+  const bottom = lineCells('r', R);
+  // bottom row full except its last cell, which the 1-cell piece fills
+  bottom.slice(0, -1).forEach(([q, r]) => set(b, q, r, 1));
+  set(b, 0, -R, 2);
+  const dot = HEX_PIECES.find(p => p.cells.length === 1);
+  const [q, r] = bottom.at(-1);
+  const { board, clears } = playHexGravityMove(b, dot, q, r);
+  assert.equal(clears, 1);
+  assert.equal(count(board), 1);
+  assert.equal(HEX_CELLS.find(([x, y]) => getCell(board, x, y) === 2)[1], R);
+});
