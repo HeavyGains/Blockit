@@ -15,7 +15,7 @@
 
 import { TRAY_SIZE, COLORS, MAX_REROLLS, CELL_POINTS, CLEAR_POINTS, WIPE_BONUS, STREAK_GRACE, seededRng,
   specialOf, addSpecials, SPECIAL_CHANCE, SPECIAL_KINDS,
-} from './logic.js?v=45';
+} from './logic.js?v=46';
 
 export const HEX_RADIUS = 4;
 const SPAN = HEX_RADIUS * 2 + 1;
@@ -254,4 +254,76 @@ export function scoreHexPlacement(state, placed, lines, wiped = false) {
   }
   const gained = placed * CELL_POINTS + clear + bonus;
   return { score: state.score + gained, streak, miss, gained, clear, bonus, lines: count };
+}
+
+// ---------- Hex Gravity (Plinko) ----------
+// A hex cell has no cell straight below it, only one down-left [q-1, r+1] and
+// one down-right [q, r+1]. After a clear, blocks fall one step at a time:
+// - if both cells below are empty, the block zig-zags: on even rows it goes
+//   down-left, on odd rows down-right, so it falls roughly straight down;
+// - if just one is empty, it slides off into that one;
+// - it rests when both are filled or off the board (the board's edge is a wall).
+// An anchor never moves, and a block touching an anchor stays put too.
+// Each tick every block moves at most once, lowest rows first.
+
+const below = (q, r) => [[q - 1, r + 1], [q, r + 1]];
+const isOpen = (board, q, r) => onBoard(q, r) && getCell(board, q, r) === null;
+
+const heldByAnchor = (board, q, r) =>
+  hexNeighbors(q, r).some(([x, y]) => specialOf(getCell(board, x, y)) === 'anchor');
+
+// The cell a block at (q, r) moves to next, or null if it stays.
+export function hexFallStep(board, q, r) {
+  const v = getCell(board, q, r);
+  if (v === null || specialOf(v) === 'anchor' || heldByAnchor(board, q, r)) return null;
+  const [left, right] = below(q, r);
+  const l = isOpen(board, ...left), rt = isOpen(board, ...right);
+  if (l && rt) return ((r % 2) + 2) % 2 === 0 ? left : right;
+  if (l) return left;
+  if (rt) return right;
+  return null;
+}
+
+// Returns { board, paths, ticks }: the settled board; for every block that
+// moved, { from, path } where path lists each cell it passed through (ending
+// where it landed); and how many ticks it took (for the animation).
+export function applyHexGravity(board) {
+  let cur = board.map(line => line.slice());
+  const trail = new Map(); // "q,r" where a block is now -> { from, path }
+  let ticks = 0;
+  for (;;) {
+    const next = cur.map(line => line.slice());
+    let moved = false;
+    for (let i = HEX_CELLS.length - 1; i >= 0; i--) {
+      const [q, r] = HEX_CELLS[i];
+      const to = hexFallStep(next, q, r);
+      if (!to) continue;
+      const [x, y] = to;
+      next[y + HEX_RADIUS][x + HEX_RADIUS] = next[r + HEX_RADIUS][q + HEX_RADIUS];
+      next[r + HEX_RADIUS][q + HEX_RADIUS] = null;
+      const t = trail.get(`${q},${r}`) ?? { from: [q, r], path: [] };
+      trail.delete(`${q},${r}`);
+      t.path.push([x, y]);
+      trail.set(`${x},${y}`, t);
+      moved = true;
+    }
+    if (!moved) break;
+    cur = next;
+    ticks++;
+  }
+  return { board: cur, paths: [...trail.values()], ticks };
+}
+
+// One whole Hex Gravity turn without animation: place, then clear and fall
+// until nothing more clears. Returns the board and how many clears happened.
+export function playHexGravityMove(board, piece, q, r) {
+  let next = placeHex(board, piece, q, r, piece.color ?? 0);
+  let clears = 0;
+  for (;;) {
+    const lines = hexFullLines(next);
+    if (!hexLineCount(lines)) break;
+    clears++;
+    next = applyHexGravity(clearHexLines(next, lines)).board;
+  }
+  return { board: next, clears };
 }
