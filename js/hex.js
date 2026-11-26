@@ -15,7 +15,7 @@
 
 import { TRAY_SIZE, COLORS, MAX_REROLLS, CELL_POINTS, CLEAR_POINTS, WIPE_BONUS, STREAK_GRACE, seededRng,
   specialOf, addSpecials, SPECIAL_CHANCE, SPECIAL_KINDS, dealFairTray, dealTrickTrayBy,
-} from './logic.js?v=54';
+} from './logic.js?v=55';
 
 export const HEX_RADIUS = 4;
 const SPAN = HEX_RADIUS * 2 + 1;

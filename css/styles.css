@@ -1422,15 +1422,13 @@
 }
 [data-style="cubes"] .hex .cell.clearing::after { background: #fff; }
 
-/* ---------- Soft cubes and Glossy cubes ----------
-   Rounded takes on Cubes (same colors and 3 faces). In Hex the hexagon's
+/* ---------- Soft cubes ----------
+   A rounded take on Cubes (same colors and 3 faces). In Hex the hexagon's
    corners are rounded with a mask (a rounded hexagon drawn in SVG, stretched
-   to the cell) in place of the sharp clip-path, and the 3 faces blend into
-   each other. Glossy adds a shine on the top face. On the square board blocks
+   to the cell) in place of the sharp clip-path. On the square board blocks
    get a rounded, soft bevel. */
 
-[data-style="softcubes"],
-[data-style="glossycubes"] {
+[data-style="softcubes"] {
   --bg: #161b2e;
   --board: #0d1120;
   --empty: rgba(255, 255, 255, 0.06);
@@ -1446,33 +1444,20 @@
   --round-hex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpolygon points='50,12.3 89,31.8 89,68.2 50,87.7 11,68.2 11,31.8' fill='%23000' stroke='%23000' stroke-width='22' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
-[data-style="softcubes"] .board,
-[data-style="glossycubes"] .board { box-shadow: 0 0 0 2px #262d48, 0 10px 24px rgba(0, 0, 0, 0.45); }
+[data-style="softcubes"] .board .board { box-shadow: 0 0 0 2px #262d48, 0 10px 24px rgba(0, 0, 0, 0.45); }
 
 /* Square board: rounded blocks with a soft bevel. */
 [data-style="softcubes"] .cell[data-c]::after,
-[data-style="softcubes"] .logo i,
-[data-style="glossycubes"] .cell[data-c]::after,
-[data-style="glossycubes"] .logo i {
+[data-style="softcubes"] .logo i {
   border-radius: 28%;
   background: linear-gradient(135deg, color-mix(in srgb, var(--k) 65%, #fff), var(--k) 50%, color-mix(in srgb, var(--k) 70%, #000));
   box-shadow: inset 3px 3px 5px rgba(255, 255, 255, 0.35), inset -3px -3px 6px rgba(0, 0, 0, 0.4);
 }
-[data-style="softcubes"] .cell::after,
-[data-style="glossycubes"] .cell::after { border-radius: 28%; }
-
-[data-style="glossycubes"] .cell[data-c]::after,
-[data-style="glossycubes"] .logo i {
-  background:
-    radial-gradient(ellipse 55% 30% at 38% 24%, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0) 100%),
-    linear-gradient(135deg, color-mix(in srgb, var(--k) 65%, #fff), var(--k) 50%, color-mix(in srgb, var(--k) 70%, #000));
-}
+[data-style="softcubes"] .cell::after .cell::after { border-radius: 28%; }
 
 /* Hex: rounded hexagons, cell and block alike. */
 [data-style="softcubes"] .hex .cell,
-[data-style="softcubes"] .hex .cell::after,
-[data-style="glossycubes"] .hex .cell,
-[data-style="glossycubes"] .hex .cell::after {
+[data-style="softcubes"] .hex .cell::after {
   clip-path: none;
   border-radius: 0;
   -webkit-mask: var(--round-hex) center / 100% 100% no-repeat;
@@ -1483,11 +1468,9 @@
    crisp faces (light top, dark right, the color on the left). Thin light
    ridges along the 3 seams, and a light edge just inside the rim, make the
    cube's edges look rounded instead of sharp. */
-[data-style="softcubes"] .hex .cell[data-c],
-[data-style="glossycubes"] .hex .cell[data-c] { background: color-mix(in srgb, var(--k) 45%, #000); }
+[data-style="softcubes"] .hex .cell[data-c] { background: color-mix(in srgb, var(--k) 45%, #000); }
 
-[data-style="softcubes"] .hex .cell[data-c]::after,
-[data-style="glossycubes"] .hex .cell[data-c]::after {
+[data-style="softcubes"] .hex .cell[data-c]::after {
   /* Set here, where --k is known. */
   --top: color-mix(in srgb, var(--k) 52%, #fff);
   --right: color-mix(in srgb, var(--k) 60%, #000);
@@ -1507,18 +1490,68 @@
     var(--faces);
 }
 
-/* Glossy: a shiny streak across the top face, and a small bright glint. */
-[data-style="glossycubes"] .hex .cell[data-c]::after {
-  background:
-    radial-gradient(circle at 38% 24%, rgba(255, 255, 255, 0.95) 0 3%, rgba(255, 255, 255, 0) 7%),
-    radial-gradient(ellipse 34% 12% at 50% 26%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 100%),
-    radial-gradient(ellipse 50% 50% at 50% 50%, rgba(0, 0, 0, 0) 82%, rgba(0, 0, 0, 0.22) 100%),
-    var(--seams),
-    var(--faces);
+[data-style="softcubes"] .hex .cell.clearing::after { background: #fff; }
+
+/* ---------- Jewel ----------
+   Cut gems. On the square board each block is a pyramid seen from above:
+   4 triangle faces meeting in the middle (light top, color left, dark right,
+   darkest bottom). In Hex each block is a cut jewel: a flat hexagon "table"
+   in the middle, ringed by 6 facets in 6 shades (light top-left, dark
+   bottom-right). The facets are the cell's own background; the table is its
+   ::after, a smaller hexagon on top. */
+
+[data-style="jewel"] {
+  --bg: #140f22;
+  --board: #0b0816;
+  --empty: rgba(255, 255, 255, 0.07);
+  --text: #f1ecfb;
+  --muted: #9a90b8;
+  --accent: #ffc24a;
+  --c0: #e3245c; /* ruby */
+  --c1: #ffb81f; /* topaz */
+  --c2: #17b978; /* emerald */
+  --c3: #2f7cf0; /* sapphire */
+  --c4: #9a4fe0; /* amethyst */
+  --c5: #f25aa8; /* pink sapphire */
 }
 
-[data-style="softcubes"] .hex .cell.clearing::after,
-[data-style="glossycubes"] .hex .cell.clearing::after { background: #fff; }
+[data-style="jewel"] .board { box-shadow: 0 0 0 2px #2a2142, 0 10px 24px rgba(0, 0, 0, 0.5); }
+
+/* Square board: pyramids. */
+[data-style="jewel"] .cell[data-c]::after,
+[data-style="jewel"] .logo i {
+  border-radius: 2px;
+  box-shadow: none;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.7) 0 3%, rgba(255, 255, 255, 0) 12%),
+    conic-gradient(from -45deg,
+      color-mix(in srgb, var(--k) 55%, #fff) 0 90deg,
+      color-mix(in srgb, var(--k) 72%, #000) 90deg 180deg,
+      color-mix(in srgb, var(--k) 50%, #000) 180deg 270deg,
+      var(--k) 270deg 360deg);
+}
+
+/* Hex: the 6 facets, from the top corner clockwise. */
+[data-style="jewel"] .hex .cell[data-c] {
+  background: conic-gradient(
+    color-mix(in srgb, var(--k) 70%, #fff) 0 60deg,
+    color-mix(in srgb, var(--k) 78%, #000) 60deg 120deg,
+    color-mix(in srgb, var(--k) 52%, #000) 120deg 180deg,
+    color-mix(in srgb, var(--k) 66%, #000) 180deg 240deg,
+    var(--k) 240deg 300deg,
+    color-mix(in srgb, var(--k) 48%, #fff) 300deg 360deg);
+}
+
+/* The table: a smaller hexagon in the middle, with a sparkle. */
+[data-style="jewel"] .hex .cell[data-c]::after {
+  inset: 27%;
+  box-shadow: none;
+  background:
+    radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.95) 0 6%, rgba(255, 255, 255, 0) 16%),
+    linear-gradient(160deg, color-mix(in srgb, var(--k) 50%, #fff), var(--k) 75%);
+}
+
+[data-style="jewel"] .hex .cell.clearing::after { inset: 1px; background: #fff; }
 
 /* ---------- 4th of July ---------- */
 
