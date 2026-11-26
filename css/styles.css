@@ -1479,26 +1479,41 @@
   mask: var(--round-hex) center / 100% 100% no-repeat;
 }
 
+/* A filled hex: the cell is a dark rounded rim, and the block on top has 3
+   crisp faces (light top, dark right, the color on the left). Thin light
+   ridges along the 3 seams, and a light edge just inside the rim, make the
+   cube's edges look rounded instead of sharp. */
+[data-style="softcubes"] .hex .cell[data-c],
+[data-style="glossycubes"] .hex .cell[data-c] { background: color-mix(in srgb, var(--k) 45%, #000); }
+
 [data-style="softcubes"] .hex .cell[data-c]::after,
 [data-style="glossycubes"] .hex .cell[data-c]::after {
-  /* --faces is set here, where --k is known. Light top, dark right, the color on the left, softly blended. */
+  /* Set here, where --k is known. */
+  --top: color-mix(in srgb, var(--k) 52%, #fff);
+  --right: color-mix(in srgb, var(--k) 60%, #000);
   --faces: conic-gradient(from -60deg,
-    color-mix(in srgb, var(--k) 55%, #fff) 0 104deg,
-    color-mix(in srgb, var(--k) 62%, #000) 136deg 224deg,
-    var(--k) 256deg 336deg,
-    color-mix(in srgb, var(--k) 55%, #fff) 360deg);
-  inset: 0.5px;
+    var(--top) 1deg 119deg, var(--right) 121deg 239deg, var(--k) 241deg 359deg, var(--top) 360deg);
+  /* Rounded seams: a soft light band on each side of the 3 face edges. */
+  --seams: conic-gradient(from -60deg,
+    rgba(255, 255, 255, 0.5) 0, rgba(255, 255, 255, 0) 7deg 113deg,
+    rgba(255, 255, 255, 0.35) 120deg, rgba(255, 255, 255, 0) 127deg 233deg,
+    rgba(255, 255, 255, 0.3) 240deg, rgba(255, 255, 255, 0) 247deg 353deg,
+    rgba(255, 255, 255, 0.5) 360deg);
+  inset: 1.5px;
   box-shadow: none;
   background:
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 55%),
+    radial-gradient(ellipse 50% 50% at 50% 50%, rgba(0, 0, 0, 0) 82%, rgba(0, 0, 0, 0.22) 100%),
+    var(--seams),
     var(--faces);
 }
 
 /* Glossy: a shiny streak across the top face, and a small bright glint. */
 [data-style="glossycubes"] .hex .cell[data-c]::after {
   background:
-    radial-gradient(circle at 36% 22%, rgba(255, 255, 255, 0.95) 0 4%, rgba(255, 255, 255, 0) 9%),
-    radial-gradient(ellipse 40% 16% at 50% 25%, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 100%),
+    radial-gradient(circle at 38% 24%, rgba(255, 255, 255, 0.95) 0 3%, rgba(255, 255, 255, 0) 7%),
+    radial-gradient(ellipse 34% 12% at 50% 26%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 100%),
+    radial-gradient(ellipse 50% 50% at 50% 50%, rgba(0, 0, 0, 0) 82%, rgba(0, 0, 0, 0.22) 100%),
+    var(--seams),
     var(--faces);
 }
 
