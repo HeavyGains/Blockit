@@ -114,20 +114,18 @@ export function isGameOver(board, tray) {
 export const MAX_REROLLS = 50;
 
 function randomTray(rng) {
-  return Array.from({ length: TRAY_SIZE }, () => ({
-    ...PIECES[Math.floor(rng() * PIECES.length)],
-    color: Math.floor(rng() * COLORS),
-  }));
+  return Array.from({ length: TRAY_SIZE }, () => randomPiece(rng));
 }
+
+const randomPiece = rng => ({ ...PIECES[Math.floor(rng() * PIECES.length)], color: Math.floor(rng() * COLORS) });
 
 // A fresh set of TRAY_SIZE random pieces, each with a random color.
 // rng returns a number in [0, 1) like Math.random.
-// Fairness: with a board, a set where no piece fits is rerolled (up to
-// MAX_REROLLS times), so a fresh set only ends the game when the board is packed.
-export function dealTray(rng = Math.random, board = null) {
-  let tray = randomTray(rng);
-  for (let i = 0; board && i < MAX_REROLLS && isGameOver(board, tray); i++) tray = randomTray(rng);
-  return tray;
+// Fairness: with a board, sets are rerolled (up to MAX_REROLLS times) until
+// all three can be placed, in some order (see dealFairTray).
+// move: playMove for Classic, or gravityMove for Gravity.
+export function dealTray(rng = Math.random, board = null, move = playMove) {
+  return dealFairTray(squareRules(move), rng, board, randomTray);
 }
 
 // For the ghost preview: the rows and columns that would clear if the piece
@@ -192,7 +190,7 @@ export function scorePlacement(state, placed, lines, wiped = false) {
 // arrives. But there is an order and placement, using line clears to make
 // room, that gets all three down, and only a few first moves lead to it.
 
-export const TRICK_CHANCE = 1 / 6;  // share of sets that try to be a trick set
+export const TRICK_CHANCE = 1 / 4;  // share of sets that try to be a trick set
 export const TRICK_MIN_FILLED = 16; // board needs this many blocks first
 export const TRICK_MAX_SHARE = 0.25; // at most this share of first moves may work
 export const TRICK_BONUS = 100;     // for placing all of a trick set
@@ -208,52 +206,100 @@ export function playMove(board, piece, row, col) {
   return clearLines(placed, fullLines(placed));
 }
 
-// True if all of these pieces can be placed, in some order.
-export function canPlaceAll(board, pieces) {
-  if (pieces.length === 0) return true;
-  for (let i = 0; i < pieces.length; i++) {
-    const rest = pieces.filter((_, j) => j !== i);
-    for (let r = 0; r < SIZE; r++) {
-      for (let c = 0; c < SIZE; c++) {
-        if (canPlace(board, pieces[i], r, c) && canPlaceAll(playMove(board, pieces[i], r, c), rest)) return true;
+// ---------- Fair deals and trick sets ----------
+// The search below works for every mode. A "rules" object says how:
+//   spots(piece): every [a, b] where the piece lies fully on the board
+//   canPlace(board, piece, a, b): true if those cells are empty
+//   move(board, piece, a, b): the board after placing, clearing (and falling)
+//   filled(board): how many blocks are on the board
+//   pieces, randomPiece(rng): the mode's pieces, and how a deal picks one
+
+const spotCache = new Map();
+export function squareRules(move = playMove) {
+  return {
+    spots(piece) {
+      if (!spotCache.has(piece.id)) {
+        const { rows, cols } = pieceSize(piece);
+        const list = [];
+        for (let r = 0; r + rows <= SIZE; r++) for (let c = 0; c + cols <= SIZE; c++) list.push([r, c]);
+        spotCache.set(piece.id, list);
       }
+      return spotCache.get(piece.id);
+    },
+    canPlace, move, filled: filledCount, pieces: PIECES, randomPiece, minFilled: TRICK_MIN_FILLED,
+  };
+}
+
+const shapeKey = p => p.cells.join(';');
+
+export const fitsBy = (rules, board, piece) => rules.spots(piece).some(([a, b]) => rules.canPlace(board, piece, a, b));
+
+// True if all of these pieces can be placed, in some order, letting the clears
+// of the first ones make room for the rest.
+export function canPlaceAllBy(rules, board, pieces) {
+  if (pieces.length === 0) return true;
+  if (pieces.length === 1) return fitsBy(rules, board, pieces[0]);
+  const tried = new Set();
+  for (let i = 0; i < pieces.length; i++) {
+    if (tried.has(shapeKey(pieces[i]))) continue; // same shape twice: once is enough
+    tried.add(shapeKey(pieces[i]));
+    const rest = pieces.filter((_, j) => j !== i);
+    for (const [a, b] of rules.spots(pieces[i])) {
+      if (rules.canPlace(board, pieces[i], a, b) && canPlaceAllBy(rules, rules.move(board, pieces[i], a, b), rest)) return true;
     }
   }
   return false;
 }
 
 // Every legal first move, and how many of them still let all pieces be placed.
-export function firstMoveStats(board, pieces) {
+export function firstMoveStatsBy(rules, board, pieces) {
   let moves = 0, winning = 0;
   for (let i = 0; i < pieces.length; i++) {
     const rest = pieces.filter((_, j) => j !== i);
-    for (let r = 0; r < SIZE; r++) {
-      for (let c = 0; c < SIZE; c++) {
-        if (!canPlace(board, pieces[i], r, c)) continue;
-        moves++;
-        if (canPlaceAll(playMove(board, pieces[i], r, c), rest)) winning++;
-      }
+    for (const [a, b] of rules.spots(pieces[i])) {
+      if (!rules.canPlace(board, pieces[i], a, b)) continue;
+      moves++;
+      if (canPlaceAllBy(rules, rules.move(board, pieces[i], a, b), rest)) winning++;
     }
   }
   return { moves, winning };
 }
 
-export function isTrickSet(board, pieces) {
-  if (pieces.every(p => fitsAnywhere(board, p))) return false;
-  const { moves, winning } = firstMoveStats(board, pieces);
+export function isTrickSetBy(rules, board, pieces) {
+  if (pieces.every(p => fitsBy(rules, board, p))) return false;
+  const { moves, winning } = firstMoveStatsBy(rules, board, pieces);
   return winning > 0 && winning / moves <= TRICK_MAX_SHARE;
 }
 
+// Deal a set that can all be placed. Rerolls up to MAX_REROLLS times; if no
+// set works (a packed board), falls back to the first set where at least one
+// piece fits, so the game only ends when the board really is packed.
+export function dealFairTray(rules, rng, board, makeTray) {
+  let tray = makeTray(rng);
+  if (!board) return tray;
+  let backup = null;
+  for (let i = 0; i <= MAX_REROLLS; i++) {
+    if (i > 0) tray = makeTray(rng);
+    if (canPlaceAllBy(rules, board, tray)) return tray;
+    if (!backup && tray.some(p => fitsBy(rules, board, p))) backup = tray;
+  }
+  return backup ?? tray;
+}
+
 // Try to deal a trick set for this board. Returns a tray, or null if none found.
-// One piece is drawn from those that fit nowhere right now; the other two are random.
-export function dealTrickTray(rng = Math.random, board, tries = TRICK_TRIES) {
-  if (filledCount(board) < TRICK_MIN_FILLED) return null;
-  const blocked = PIECES.filter(p => !fitsAnywhere(board, p));
+// One piece is drawn from those that fit nowhere right now; the other two are
+// random. The only way through is to clear a line with one or two pieces
+// first, in the right spot, to make room for the rest.
+export function dealTrickTrayBy(rules, rng, board, tries = TRICK_TRIES) {
+  if (rules.filled(board) < rules.minFilled) return null;
+  const blocked = rules.pieces.filter(p => !fitsBy(rules, board, p));
   if (blocked.length === 0) return null;
-  const pick = list => ({ ...list[Math.floor(rng() * list.length)], color: Math.floor(rng() * COLORS) });
   for (let i = 0; i < tries; i++) {
-    const tray = [pick(blocked), pick(PIECES), pick(PIECES)];
-    if (isTrickSet(board, tray)) {
+    const tray = [
+      { ...blocked[Math.floor(rng() * blocked.length)], color: Math.floor(rng() * COLORS) },
+      rules.randomPiece(rng), rules.randomPiece(rng),
+    ];
+    if (isTrickSetBy(rules, board, tray)) {
       // Shuffle so the blocked piece isn't always on the left.
       for (let k = tray.length - 1; k > 0; k--) {
         const j = Math.floor(rng() * (k + 1));
@@ -264,6 +310,13 @@ export function dealTrickTray(rng = Math.random, board, tries = TRICK_TRIES) {
   }
   return null;
 }
+
+// Classic versions, kept for the tests and the app.
+export const canPlaceAll = (board, pieces) => canPlaceAllBy(squareRules(), board, pieces);
+export const firstMoveStats = (board, pieces) => firstMoveStatsBy(squareRules(), board, pieces);
+export const isTrickSet = (board, pieces) => isTrickSetBy(squareRules(), board, pieces);
+export const dealTrickTray = (rng = Math.random, board, tries = TRICK_TRIES, move = playMove) =>
+  dealTrickTrayBy(squareRules(move), rng, board, tries);
 
 // ---------- Gravity mode ----------
 // After a clear, every block drops straight down its column to fill the gaps.
@@ -326,6 +379,9 @@ export function playGravityMove(board, piece, row, col) {
   }
   return { board: next, clears };
 }
+
+// playGravityMove as a move for the fair-deal search (just the board).
+export const gravityMove = (board, piece, row, col) => playGravityMove(board, piece, row, col).board;
 
 export const MODES = [
   { id: 'classic', name: 'Classic', about: 'Fill rows and columns to clear them.' },
@@ -443,7 +499,7 @@ export function seededRng(text) {
 // end of a game doesn't shift them.
 export function dailyTray(day, n, board = null, variant = 'classic') {
   const seed = variant === 'classic' ? `blockit-${day}-${n}` : `blockit-${variant}-${day}-${n}`;
-  const tray = dealTray(seededRng(seed), board);
+  const tray = dealTray(seededRng(seed), board, variant.startsWith('gravity') ? gravityMove : playMove);
   if (!variant.endsWith('-special')) return tray;
   const rng = seededRng(`${seed}-specials`);
   return variant.startsWith('gravity')

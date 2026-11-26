@@ -11,10 +11,15 @@ lines cleared at once, times your streak (clears on back-to-back placements;
 2 misses are forgiven, the 3rd resets it). Emptying the board adds 500. Best
 score is saved on the phone for each player (tap the name to switch).
 
-Tricky sets: about 1 set in 6 (once the board has 16+ blocks) is a puzzle. One
-piece fits nowhere when it arrives, but there is a hidden order that uses line
-clears to make room, and at most a quarter of first moves lead to it. Placing
-all three earns "Solved!" +100.
+Fair sets: every new set of 3 can be placed whole, in some order (the deal
+rerolls up to 50 times until it finds one; only a packed board gets a set that
+can't). The search plays each mode's own rules, falls included.
+
+Tricky sets: about 1 set in 4 (once a quarter of the board is filled) is a
+puzzle, in every mode. One piece fits nowhere when it arrives, but there is a
+hidden order that uses line clears to make room, and at most a quarter of first
+moves lead to it. Placing all three earns "Solved!" +100. Not with specials on,
+and not in Daily Duels.
 
 Styles: tap the palette to pick Paper stickers (default), Neon arcade, Neon
 sunset, Neon ice, Neon toxic, Candy jelly, Woodshop, Chalkboard, Pixel, Garden,
@@ -26,8 +31,7 @@ switching away and back, or closing the page, picks up where you left off.
 Classic is the default. In Gravity, after a clear every block falls straight
 down its column; if that fills new lines they clear too, and each step of the
 chain scores x2, x3 and so on. Each mode keeps its own best (Classic in
-`blockit.best`, Gravity in `blockit.best.gravity`). Tricky sets only come in
-Classic.
+`blockit.best`, Gravity in `blockit.best.gravity`).
 
 Special blocks: a switch in the Game sheet (tap the mode name). With it on,
 about 1 piece in 4 carries one special cell, in either mode. Bomb: when its line
@@ -72,7 +76,6 @@ Hex: pick Hex in the Game sheet. The board is one big hexagon (5 cells per
 side, 61 cells), pieces are 1 to 4 hex cells, and lines clear in 3 directions.
 Same scoring as Classic, its own saved game and best (`blockit.best.hex`).
 Daily Duel works in Hex too (Hex Duel, `daily-hex`, sets from dailyHexTray).
-Special blocks work in Hex too (a bomb blasts the 6 hexes around it); no
-tricky sets in Hex. Rules live in
+Special blocks work in Hex too (a bomb blasts the 6 hexes around it). Rules live in
 `js/hex.js` (tested in `tests/hex.test.js`); app.js switches between square and
 hex through a small adapter (`G`).

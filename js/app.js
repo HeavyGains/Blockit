@@ -2,19 +2,19 @@ import {
   SIZE, emptyBoard, canPlace, place, fullLines,
   isGameOver, dealTray, trayEmpty, fitsAnywhere, previewLines,
   newScore, scorePlacement, boardEmpty,
-  dealTrickTray, TRICK_CHANCE, TRICK_BONUS,
+  dealTrickTray, TRICK_CHANCE, TRICK_BONUS, playMove, gravityMove,
   applyGravity, scoreChain, MODES,
   dayKey, dailyTray, shareText, shortDay, duelId, duelName,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=51';
+} from './logic.js?v=52';
 import {
   HEX_RADIUS, emptyHexBoard, canPlaceHex, placeHex, hexFullLines, hexLineCount, hexClearedCells,
   fitsAnywhereHex, isHexGameOver, previewHexLines, dealHexTray, scoreHexPlacement, dailyHexTray, resolveHexClear,
-  applyHexGravity, scoreHexChain,
-} from './hex.js?v=51';
-import { online, queueScore, fetchBoard } from './online.js?v=51';
-import { sfx, unlock, setSoundOn } from './sound.js?v=51';
-import { haptic, setHapticsOn } from './haptics.js?v=51';
+  applyHexGravity, scoreHexChain, hexMove, hexGravityMove, dealHexTrickTray,
+} from './hex.js?v=52';
+import { online, queueScore, fetchBoard } from './online.js?v=52';
+import { sfx, unlock, setSoundOn } from './sound.js?v=52';
+import { haptic, setHapticsOn } from './haptics.js?v=52';
 
 const LIFT = 84;      // px the dragged piece floats above the finger, so it stays visible
 const GAIN = 1.4;     // the piece travels 1.4x the finger's movement, so short swipes reach the far side
@@ -78,7 +78,7 @@ if (store.get('blockit.mode') === 'daily') {
 let mode = MODES.some(m => m.id === store.get('blockit.mode')) ? store.get('blockit.mode') : 'classic';
 const gravity = () => mode === 'gravity';
 // Hex: a hexagon board where lines clear 3 ways (rules in hex.js). Specials
-// work as in Classic (a bomb blasts the 6 hexes around it); no tricky sets.
+// work as in Classic (a bomb blasts the 6 hexes around it).
 const hex = () => mode === 'hex' || mode === 'hexgravity';
 // Hex Gravity: Hex, where blocks pour down like sand after a clear (hex.js).
 const hexGravity = () => mode === 'hexgravity';
@@ -309,7 +309,10 @@ const G = {
   fits: (b, p) => (hex() ? fitsAnywhereHex(b, p) : fitsAnywhere(b, p)),
   over: (b, t) => (hex() ? isHexGameOver(b, t) : isGameOver(b, t)),
   preview: (b, p, row, col) => (hex() ? previewHexLines(b, p, col - HR, row - HR) : previewLines(b, p, row, col)),
-  deal: b => (hex() ? dealHexTray(Math.random, b) : dealTray(Math.random, b)),
+  // How a turn plays out, for the fair-deal search (with falls in Gravity).
+  move: () => (hex() ? (hexGravity() ? hexGravityMove : hexMove) : (gravity() ? gravityMove : playMove)),
+  deal: b => (hex() ? dealHexTray(Math.random, b, G.move()) : dealTray(Math.random, b, G.move())),
+  trick: b => (hex() ? dealHexTrickTray(Math.random, b, G.move()) : dealTrickTray(Math.random, b, undefined, G.move())),
   score: (st, n, lines, wiped) => (hex() ? scoreHexPlacement(st, n, lines, wiped) : scorePlacement(st, n, lines, wiped)),
   // Board [row, col] of each cell of a piece placed at (row, col).
   spots: (p, row, col) => p.cells.map(([a, b]) => (hex() ? [row + b, col + a] : [row + a, col + b])),
@@ -477,19 +480,20 @@ const withSpecials = t => (gravity()
   ? addSpecials(t, Math.random, GRAVITY_SPECIAL_CHANCE, GRAVITY_KINDS)
   : addSpecials(t, Math.random, SPECIAL_CHANCE, SPECIAL_KINDS));
 
-// About 1 set in TRICK_CHANCE is a trick set when the board allows one.
+// Every set can be placed whole (see dealFairTray). About 1 set in
+// TRICK_CHANCE is a trick set when the board allows one, in every mode:
+// a piece doesn't fit until one or two others clear a line in the right spot.
 function dealNext() {
   if (daily()) {
     setNo++;
     trickSet = false;
     return hex() ? dailyHexTray(day, setNo, board, specials, mode) : dailyTray(day, setNo, board, variant());
   }
-  if (hex()) { trickSet = false; return specials ? withSpecials(G.deal(board)) : G.deal(board); }
-  // Trick sets are solved with Classic rules, so they only come in Classic.
-  if (specials) return withSpecials(dealTray(Math.random, board));
-  const trick = !gravity() && Math.random() < TRICK_CHANCE ? dealTrickTray(Math.random, board) : null;
+  // Specials change how clears work (stones only crack), so no trick sets.
+  if (specials) { trickSet = false; return withSpecials(G.deal(board)); }
+  const trick = Math.random() < TRICK_CHANCE ? G.trick(board) : null;
   trickSet = !!trick;
-  return trick || dealTray(Math.random, board);
+  return trick || G.deal(board);
 }
 
 // ---------- Dragging ----------
