@@ -6,15 +6,15 @@ import {
   applyGravity, scoreChain, MODES,
   dayKey, dailyTray, shareText, shortDay, duelId, duelName,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=60';
+} from './logic.js?v=61';
 import {
   HEX_RADIUS, emptyHexBoard, canPlaceHex, placeHex, hexFullLines, hexLineCount, hexClearedCells,
   fitsAnywhereHex, isHexGameOver, previewHexLines, dealHexTray, scoreHexPlacement, dailyHexTray, resolveHexClear,
   applyHexGravity, scoreHexChain, hexMove, hexGravityMove, dealHexTrickTray,
-} from './hex.js?v=60';
-import { online, queueScore, fetchBoard } from './online.js?v=60';
-import { sfx, unlock, setSoundOn } from './sound.js?v=60';
-import { haptic, setHapticsOn } from './haptics.js?v=60';
+} from './hex.js?v=61';
+import { online, queueScore, fetchBoard } from './online.js?v=61';
+import { sfx, unlock, setSoundOn } from './sound.js?v=61';
+import { haptic, setHapticsOn } from './haptics.js?v=61';
 
 const LIFT = 84;      // px the dragged piece floats above the finger, so it stays visible
 const GAIN = 1.4;     // the piece travels 1.4x the finger's movement, so short swipes reach the far side
@@ -755,7 +755,7 @@ function clearFx(popping, from, lines) {
 
   // When each block goes: Ripple by distance from the piece, Laser by how far
   // along its beam it is (a block on two lines goes at the first beam).
-  const size = cells[0].offsetWidth;
+  const size = cellSize();
   const due = new Array(popping.length).fill(Infinity);
   if (fxName === 'laser') {
     const idx = new Map(popping.map(([r, c], i) => [`${r},${c}`, i]));
@@ -793,6 +793,9 @@ function clearFx(popping, from, lines) {
   return Math.max(...due);
 }
 
+// A cell's width in px. In Hex the corner cells are hidden (0 wide), so use a shown one.
+const cellSize = () => (cells.find(el => el.offsetWidth) || cells[0]).offsetWidth;
+
 // Every clear gives the board a small knock.
 function bump() {
   if (calm()) return;
@@ -816,7 +819,7 @@ function beamEnds(group) {
 }
 
 function beam(fx, a, b, delay) {
-  const size = cells[0].offsetWidth;
+  const size = cellSize();
   const el = document.createElement('b');
   el.className = 'beam';
   const len = Math.hypot(b.x - a.x, b.y - a.y) + size;
@@ -860,7 +863,7 @@ function sparksAt(fx, at, size, color) {
 
 // Shatter: the block breaks into 4 pieces that tumble down and off the board.
 function breakAt(fx, at, color, side) {
-  const size = cells[0].offsetWidth;
+  const size = cellSize();
   const h = size / 2;
   [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sy]) => {
     const bit = document.createElement('i');
@@ -879,7 +882,7 @@ function breakAt(fx, at, color, side) {
 
 // Ripple: 5 chips fly out of a block, away from where the wave started, and drop.
 function shardsAt(fx, at, o, color) {
-  const size = cells[0].offsetWidth;
+  const size = cellSize();
   const ux = at.x - o.x, uy = at.y - o.y, len = Math.hypot(ux, uy) || 1;
   for (let k = 0; k < 5; k++) {
     const a = Math.atan2(uy / len, ux / len) + (Math.random() - 0.5) * 2.4 + (len < 2 ? Math.random() * 6.3 : 0);
