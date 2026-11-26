@@ -6,15 +6,15 @@ import {
   applyGravity, scoreChain, MODES,
   dayKey, dailyTray, shareText, shortDay, duelId, duelName,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=56';
+} from './logic.js?v=57';
 import {
   HEX_RADIUS, emptyHexBoard, canPlaceHex, placeHex, hexFullLines, hexLineCount, hexClearedCells,
   fitsAnywhereHex, isHexGameOver, previewHexLines, dealHexTray, scoreHexPlacement, dailyHexTray, resolveHexClear,
   applyHexGravity, scoreHexChain, hexMove, hexGravityMove, dealHexTrickTray,
-} from './hex.js?v=56';
-import { online, queueScore, fetchBoard } from './online.js?v=56';
-import { sfx, unlock, setSoundOn } from './sound.js?v=56';
-import { haptic, setHapticsOn } from './haptics.js?v=56';
+} from './hex.js?v=57';
+import { online, queueScore, fetchBoard } from './online.js?v=57';
+import { sfx, unlock, setSoundOn } from './sound.js?v=57';
+import { haptic, setHapticsOn } from './haptics.js?v=57';
 
 const LIFT = 84;      // px the dragged piece floats above the finger, so it stays visible
 const GAIN = 1.4;     // the piece travels 1.4x the finger's movement, so short swipes reach the far side
@@ -128,6 +128,7 @@ const STYLES = [
   { id: 'cubes', name: 'Cubes' },
   { id: 'softcubes', name: 'Soft cubes' },
   { id: 'jewel', name: 'Jewel' },
+  { id: 'neoncubes', name: 'Neon cubes' },
   { id: 'classic', name: 'Classic' },
   // Seasonal styles: a tab of their own in the Style sheet.
   { id: 'spring', name: 'Spring', group: 'seasonal' },
