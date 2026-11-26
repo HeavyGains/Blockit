@@ -1422,6 +1422,89 @@
 }
 [data-style="cubes"] .hex .cell.clearing::after { background: #fff; }
 
+/* ---------- Soft cubes and Glossy cubes ----------
+   Rounded takes on Cubes (same colors and 3 faces). In Hex the hexagon's
+   corners are rounded with a mask (a rounded hexagon drawn in SVG, stretched
+   to the cell) in place of the sharp clip-path, and the 3 faces blend into
+   each other. Glossy adds a shine on the top face. On the square board blocks
+   get a rounded, soft bevel. */
+
+[data-style="softcubes"],
+[data-style="glossycubes"] {
+  --bg: #161b2e;
+  --board: #0d1120;
+  --empty: rgba(255, 255, 255, 0.06);
+  --text: #eef1fb;
+  --muted: #8f98b8;
+  --accent: #ffb547;
+  --c0: #f2545b;
+  --c1: #ffb547;
+  --c2: #3ecf8e;
+  --c3: #3d9df2;
+  --c4: #9b6cf2;
+  --c5: #f26cb8;
+  --round-hex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpolygon points='50,12.3 89,31.8 89,68.2 50,87.7 11,68.2 11,31.8' fill='%23000' stroke='%23000' stroke-width='22' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+[data-style="softcubes"] .board,
+[data-style="glossycubes"] .board { box-shadow: 0 0 0 2px #262d48, 0 10px 24px rgba(0, 0, 0, 0.45); }
+
+/* Square board: rounded blocks with a soft bevel. */
+[data-style="softcubes"] .cell[data-c]::after,
+[data-style="softcubes"] .logo i,
+[data-style="glossycubes"] .cell[data-c]::after,
+[data-style="glossycubes"] .logo i {
+  border-radius: 28%;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--k) 65%, #fff), var(--k) 50%, color-mix(in srgb, var(--k) 70%, #000));
+  box-shadow: inset 3px 3px 5px rgba(255, 255, 255, 0.35), inset -3px -3px 6px rgba(0, 0, 0, 0.4);
+}
+[data-style="softcubes"] .cell::after,
+[data-style="glossycubes"] .cell::after { border-radius: 28%; }
+
+[data-style="glossycubes"] .cell[data-c]::after,
+[data-style="glossycubes"] .logo i {
+  background:
+    radial-gradient(ellipse 55% 30% at 38% 24%, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0) 100%),
+    linear-gradient(135deg, color-mix(in srgb, var(--k) 65%, #fff), var(--k) 50%, color-mix(in srgb, var(--k) 70%, #000));
+}
+
+/* Hex: rounded hexagons, cell and block alike. */
+[data-style="softcubes"] .hex .cell,
+[data-style="softcubes"] .hex .cell::after,
+[data-style="glossycubes"] .hex .cell,
+[data-style="glossycubes"] .hex .cell::after {
+  clip-path: none;
+  border-radius: 0;
+  -webkit-mask: var(--round-hex) center / 100% 100% no-repeat;
+  mask: var(--round-hex) center / 100% 100% no-repeat;
+}
+
+[data-style="softcubes"] .hex .cell[data-c]::after,
+[data-style="glossycubes"] .hex .cell[data-c]::after {
+  /* --faces is set here, where --k is known. Light top, dark right, the color on the left, softly blended. */
+  --faces: conic-gradient(from -60deg,
+    color-mix(in srgb, var(--k) 55%, #fff) 0 104deg,
+    color-mix(in srgb, var(--k) 62%, #000) 136deg 224deg,
+    var(--k) 256deg 336deg,
+    color-mix(in srgb, var(--k) 55%, #fff) 360deg);
+  inset: 0.5px;
+  box-shadow: none;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 55%),
+    var(--faces);
+}
+
+/* Glossy: a shiny streak across the top face, and a small bright glint. */
+[data-style="glossycubes"] .hex .cell[data-c]::after {
+  background:
+    radial-gradient(circle at 36% 22%, rgba(255, 255, 255, 0.95) 0 4%, rgba(255, 255, 255, 0) 9%),
+    radial-gradient(ellipse 40% 16% at 50% 25%, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 100%),
+    var(--faces);
+}
+
+[data-style="softcubes"] .hex .cell.clearing::after,
+[data-style="glossycubes"] .hex .cell.clearing::after { background: #fff; }
+
 /* ---------- 4th of July ---------- */
 
 [data-style="july4"] {
