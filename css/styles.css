@@ -1495,10 +1495,9 @@
 /* ---------- Jewel ----------
    Cut gems. On the square board each block is a pyramid seen from above:
    4 triangle faces meeting in the middle (light top, color left, dark right,
-   darkest bottom). In Hex each block is a cut jewel: a flat hexagon "table"
-   in the middle, ringed by 6 facets in 6 shades (light top-left, dark
-   bottom-right). The facets are the cell's own background; the table is its
-   ::after, a smaller hexagon on top. */
+   darkest bottom). In Hex each block is a 6-sided pyramid: 6 triangle
+   facets in 6 shades (light top-left, dark bottom-right) meeting in a point.
+   The facets are the cell's own background; ::after adds the glint. */
 
 [data-style="jewel"] {
   --bg: #140f22;
@@ -1542,13 +1541,12 @@
     color-mix(in srgb, var(--k) 48%, #fff) 300deg 360deg);
 }
 
-/* The table: a smaller hexagon in the middle, with a sparkle. */
+/* No flat table: the 6 facets meet in a sharp point in the middle, like the
+   square pyramids, with a glint at the tip. */
 [data-style="jewel"] .hex .cell[data-c]::after {
-  inset: 27%;
+  inset: 0;
   box-shadow: none;
-  background:
-    radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.95) 0 6%, rgba(255, 255, 255, 0) 16%),
-    linear-gradient(160deg, color-mix(in srgb, var(--k) 50%, #fff), var(--k) 75%);
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.75) 0 3%, rgba(255, 255, 255, 0) 11%);
 }
 
 [data-style="jewel"] .hex .cell.clearing::after { inset: 1px; background: #fff; }
