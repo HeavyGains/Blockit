@@ -24,7 +24,7 @@ and not in Daily Duels.
 Styles: tap the palette to pick Paper stickers (default), Neon arcade, Neon
 sunset, Neon ice, Neon toxic, Candy jelly, Woodshop, Chalkboard, Pixel, Garden,
 Camo, Cubes (3D cubes on the Hex board), Soft cubes (rounded
-cubes), Jewel (pyramids on squares, cut gems on Hex) or Classic. Each player's choice is saved. Styles live in `css/styles.css`.
+cubes), Jewel (pyramids on squares, 6-sided pyramids on Hex) or Classic. Each player's choice is saved. Styles live in `css/styles.css`.
 
 Modes: tap the mode name under the score to switch modes or start a New game.
 Each mode's game in progress is saved on the phone (`blockit.game.<mode>`), so
