@@ -790,7 +790,7 @@ html[data-style] .pop.boom small { color: #ff6d00; text-shadow: 0 1px 0 rgba(0, 
   border-radius: 2px;
   background: #fff;
   box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.25);
-  animation: shard 520ms cubic-bezier(0.15, 0.7, 0.4, 1) forwards;
+  animation: shard 600ms cubic-bezier(0.15, 0.7, 0.4, 1) forwards;
 }
 
 @keyframes shard {
@@ -850,7 +850,104 @@ html[data-style] .pop.boom small { color: #ff6d00; text-shadow: 0 1px 0 rgba(0, 
   100% { transform: translate(-50%, -90%) scale(0.9); opacity: 0; }
 }
 
+/* Every clear: a small knock. */
+.board.bump { animation: bump 200ms ease-out; }
+@keyframes bump { 35% { transform: translateY(3px) scale(0.995); } }
+
+/* Ripple: a ring of light spreading from the piece. */
+.shards .wave {
+  position: absolute;
+  width: calc(var(--s) * 2);
+  height: calc(var(--s) * 2);
+  margin: calc(var(--s) * -1) 0 0 calc(var(--s) * -1);
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 12px 2px rgba(255, 255, 255, 0.6), inset 0 0 12px 2px rgba(255, 255, 255, 0.5);
+  animation: wave 420ms ease-out forwards;
+}
+@keyframes wave {
+  from { transform: scale(0.2); opacity: 1; }
+  to { transform: scale(5); opacity: 0; border-width: 1px; }
+}
+
+/* Laser: a white-hot beam sweeps along the line, leaving a glow. */
+.shards .beam {
+  position: absolute;
+  height: calc(var(--s) * 0.5);
+  margin-top: calc(var(--s) * -0.25);
+  transform-origin: 0 50%;
+  pointer-events: none;
+}
+.shards .beam::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), #fff 70%, #fff);
+  box-shadow: 0 0 14px 4px rgba(120, 220, 255, 0.9), 0 0 4px 1px #fff;
+  transform-origin: 0 50%;
+  animation: beam 360ms cubic-bezier(0.3, 0.6, 0.4, 1) both;
+  animation-delay: inherit;
+}
+@keyframes beam {
+  0% { transform: scaleX(0) scaleY(0.4); opacity: 1; }
+  45% { transform: scaleX(1) scaleY(0.4); opacity: 1; }
+  60% { transform: scaleX(1) scaleY(1.1); opacity: 1; }
+  100% { transform: scaleX(1) scaleY(0.1); opacity: 0; }
+}
+.shards i.spk {
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 6px 2px currentColor;
+  animation: shard 380ms ease-out forwards;
+}
+
+/* Shatter: the blocks flash and crack, then break into 4 pieces that fall. */
+.cell.cracked::after { animation: crack 110ms linear; filter: brightness(1.7) contrast(1.1); }
+@keyframes crack {
+  25% { transform: translate(-2px, 1px) rotate(-3deg); }
+  60% { transform: translate(2px, -1px) rotate(3deg); }
+}
+html .board .cell.shattered::after,
+html .board .cell.shattered::before { visibility: hidden; animation: none; }
+.shards i.chunk {
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55), inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+  animation: chunk 620ms cubic-bezier(0.3, 0, 0.8, 0.6) forwards;
+}
+@keyframes chunk {
+  0% { transform: translate(0, 0) rotate(0); opacity: 1; }
+  30% { transform: translate(calc(var(--dx) * 0.5), var(--dy)) rotate(calc(var(--rot) * 0.4)); opacity: 1; }
+  100% { transform: translate(var(--dx), calc(var(--dy) + var(--fall))) rotate(var(--rot)); opacity: 0; }
+}
+[data-style^="neon"] .shards i.chunk,
+[data-style="neoncubes"] .shards i.chunk { background: transparent !important; box-shadow: 0 0 6px 1px currentColor, inset 0 0 0 2px currentColor; }
+
+/* "New effect: Laser!" when the score passes the next 1,000. */
+.fxnote {
+  position: absolute;
+  left: 50%;
+  top: 70%;
+  z-index: 7;
+  pointer-events: none;
+  white-space: nowrap;
+  font-weight: 900;
+  font-size: 20px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 999px;
+  padding: 6px 14px;
+  animation: fxnote 1800ms ease-out forwards;
+}
+@keyframes fxnote {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  10% { transform: translate(-50%, -50%) scale(1.08); opacity: 1; }
+  18%, 80% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -70%); opacity: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .board.bump { animation: none; }
   .board.jolt { animation: none; }
   .cheer { animation-duration: 1200ms; }
 }

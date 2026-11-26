@@ -6,15 +6,15 @@ import {
   applyGravity, scoreChain, MODES,
   dayKey, dailyTray, shareText, shortDay, duelId, duelName,
   addSpecials, resolveClear, SPECIAL_CHANCE, SPECIAL_KINDS, GRAVITY_KINDS, GRAVITY_SPECIAL_CHANCE, specialPoints, colorOf, specialOf,
-} from './logic.js?v=59';
+} from './logic.js?v=60';
 import {
   HEX_RADIUS, emptyHexBoard, canPlaceHex, placeHex, hexFullLines, hexLineCount, hexClearedCells,
   fitsAnywhereHex, isHexGameOver, previewHexLines, dealHexTray, scoreHexPlacement, dailyHexTray, resolveHexClear,
   applyHexGravity, scoreHexChain, hexMove, hexGravityMove, dealHexTrickTray,
-} from './hex.js?v=59';
-import { online, queueScore, fetchBoard } from './online.js?v=59';
-import { sfx, unlock, setSoundOn } from './sound.js?v=59';
-import { haptic, setHapticsOn } from './haptics.js?v=59';
+} from './hex.js?v=60';
+import { online, queueScore, fetchBoard } from './online.js?v=60';
+import { sfx, unlock, setSoundOn } from './sound.js?v=60';
+import { haptic, setHapticsOn } from './haptics.js?v=60';
 
 const LIFT = 84;      // px the dragged piece floats above the finger, so it stays visible
 const GAIN = 1.4;     // the piece travels 1.4x the finger's movement, so short swipes reach the far side
@@ -664,72 +664,233 @@ async function clearWithFlash(lines, from = null) {
     } else popping.push([r, c, el]);
   }
   const n = G.count(lines);
-  const waveMs = rippleClear(popping, from);
+  pickFx(false);
+  const waveMs = clearFx(popping, from, lines);
   if (res.bombs.length) { explode(res); sfx.boom(); haptic.boom(); }
   else { sfx.clear(n); haptic.clear(n); }
   if (n > 1) cheerLines(n);
   await wait(Math.max(res.bombs.length ? BLAST_MS : 0, waveMs + CLEAR_MS));
   clearTimeout(waveTimer);
-  cells.forEach(el => el.classList.remove('clearing', 'cracking', 'blasting'));
+  cells.forEach(el => el.classList.remove('clearing', 'cracking', 'blasting', 'cracked', 'shattered'));
   board = res.board;
   drawBoard();
   return res;
 }
 
 // ---------- Line clears ----------
+// Three effects, picked at random each game and swapped for a new one every
+// FX_STEP points: Ripple (blocks pop in a wave from the piece and throw chips),
+// Laser (a beam sweeps each line and blocks burst as it passes) and Shatter
+// (the lines crack, then break into pieces that tumble off the board).
 
+const FX = ['ripple', 'laser', 'shatter'];
+const FX_NAMES = { ripple: 'Ripple', laser: 'Laser', shatter: 'Shatter' };
+const FX_STEP = 1000;
+const CRACK_MS = 110; // Shatter: how long the cracks show before the blocks break
+let fxName = FX[Math.floor(Math.random() * FX.length)];
+let fxLevel = 0;
 let waveTimer = 0;
 
-// Each block pops (in its style's own way) when the wave reaches it, and
-// throws off a few shards. Returns how long the wave takes to cross, in ms.
-function rippleClear(popping, from) {
+// For trying one effect: add ?fx=laser (or ripple, shatter) to the address.
+const FX_PIN = FX.find(f => new URLSearchParams(location.search).get('fx') === f);
+
+// A new game gets a random effect; each FX_STEP points swaps to a different one.
+function pickFx(fresh) {
+  if (FX_PIN) { fxName = FX_PIN; return; }
+  const level = Math.floor((score?.score || 0) / FX_STEP);
+  if (fresh) { fxLevel = level; fxName = FX[Math.floor(Math.random() * FX.length)]; return; }
+  if (level <= fxLevel) return;
+  fxLevel = level;
+  const others = FX.filter(f => f !== fxName);
+  fxName = others[Math.floor(Math.random() * others.length)];
+  announceFx();
+}
+
+function announceFx() {
+  const el = document.createElement('div');
+  el.className = 'fxnote';
+  el.textContent = `New effect: ${FX_NAMES[fxName]}!`;
+  boardEl.appendChild(el);
+  el.addEventListener('animationend', () => el.remove());
+}
+
+// Each line's cells (board [row, col]), for the laser beams.
+function lineGroups(lines) {
+  if (hex()) {
+    const out = [];
+    for (const axis of ['q', 'r', 's']) for (const i of lines[axis]) {
+      const one = { q: [], r: [], s: [] };
+      one[axis] = [i];
+      out.push(hexClearedCells(one).map(([q, r]) => [r + HR, q + HR]));
+    }
+    return out;
+  }
+  const all = [...Array(SIZE).keys()];
+  return [...lines.rows.map(r => all.map(c => [r, c])), ...lines.cols.map(c => all.map(r => [r, c]))];
+}
+
+// Runs this game's effect on the cells being cleared. Returns how long it
+// takes before the board can be emptied, in ms (not counting the pop itself).
+function clearFx(popping, from, lines) {
   if (!popping.length) return 0;
   const pts = popping.map(([r, c]) => cellCenter(r, c));
   const o = from || { x: pts.reduce((a, p) => a + p.x, 0) / pts.length, y: pts.reduce((a, p) => a + p.y, 0) / pts.length };
-  const dist = pts.map(p => Math.hypot(p.x - o.x, p.y - o.y));
-  const far = Math.max(...dist, 1);
-  const still = calm();
   const fx = document.createElement('div');
   fx.className = 'shards';
   boardEl.appendChild(fx);
-  // Bucket by delay so a whole ring of blocks pops on one timer tick.
-  const steps = new Map();
-  popping.forEach(([, , el], i) => {
-    const ms = still ? 0 : Math.round((dist[i] / far) * WAVE_MS / 10) * 10;
-    if (!steps.has(ms)) steps.set(ms, []);
-    steps.get(ms).push(i);
-  });
-  const go = list => list.forEach(i => {
+  setTimeout(() => fx.remove(), 1200);
+  bump();
+  const still = calm();
+  const color = el => getComputedStyle(el).getPropertyValue('--k').trim();
+  if (still) { popping.forEach(([, , el]) => el.classList.add('clearing')); return 0; }
+
+  if (fxName === 'shatter') {
+    popping.forEach(([, , el]) => el.classList.add('cracked'));
+    waveTimer = setTimeout(() => popping.forEach(([, , el], i) => {
+      el.classList.add('shattered');
+      breakAt(fx, pts[i], color(el), (pts[i].x - o.x));
+    }), CRACK_MS);
+    return CRACK_MS;
+  }
+
+  // When each block goes: Ripple by distance from the piece, Laser by how far
+  // along its beam it is (a block on two lines goes at the first beam).
+  const size = cells[0].offsetWidth;
+  const due = new Array(popping.length).fill(Infinity);
+  if (fxName === 'laser') {
+    const idx = new Map(popping.map(([r, c], i) => [`${r},${c}`, i]));
+    lineGroups(lines).forEach((group, g) => {
+      const ends = beamEnds(group);
+      const len = Math.hypot(ends.b.x - ends.a.x, ends.b.y - ends.a.y) || 1;
+      beam(fx, ends.a, ends.b, g * 40);
+      for (const [r, c] of group) {
+        const i = idx.get(`${r},${c}`);
+        if (i === undefined) continue;
+        const along = Math.hypot(pts[i].x - ends.a.x, pts[i].y - ends.a.y) / len;
+        due[i] = Math.min(due[i], g * 40 + Math.round(along * WAVE_MS / 10) * 10);
+      }
+    });
+    popping.forEach((_, i) => { if (due[i] === Infinity) due[i] = 0; });
+  } else {
+    const dist = pts.map(p => Math.hypot(p.x - o.x, p.y - o.y));
+    const far = Math.max(...dist, 1);
+    dist.forEach((d, i) => { due[i] = Math.round((d / far) * WAVE_MS / 10) * 10; });
+    ringAt(fx, o, size);
+  }
+  const go = i => {
     const el = popping[i][2];
     el.classList.add('clearing');
-    if (!still) shardsAt(fx, pts[i], o, getComputedStyle(el).getPropertyValue('--k'));
-  });
-  go(steps.get(0) || []);
-  const later = [...steps.keys()].filter(ms => ms > 0).sort((a, b) => a - b);
+    if (fxName === 'laser') sparksAt(fx, pts[i], size, color(el));
+    else shardsAt(fx, pts[i], o, color(el));
+  };
+  const order = due.map((ms, i) => [ms, i]).sort((a, b) => a[0] - b[0]);
   const t0 = performance.now();
   const tick = () => {
-    while (later.length && performance.now() - t0 >= later[0] - 8) go(steps.get(later.shift()));
-    if (later.length) waveTimer = setTimeout(tick, 10);
+    while (order.length && performance.now() - t0 >= order[0][0] - 8) go(order.shift()[1]);
+    if (order.length) waveTimer = setTimeout(tick, 10);
   };
-  if (later.length) waveTimer = setTimeout(tick, 10);
-  setTimeout(() => fx.remove(), WAVE_MS + 700);
-  return still ? 0 : (later.at(-1) || 0);
+  tick();
+  return Math.max(...due);
 }
 
-// 3 shards fly out of a block, away from where the wave started, and drop.
+// Every clear gives the board a small knock.
+function bump() {
+  if (calm()) return;
+  boardEl.classList.remove('bump');
+  void boardEl.offsetWidth;
+  boardEl.classList.add('bump');
+  setTimeout(() => boardEl.classList.remove('bump'), 220);
+}
+
+// The two cells of a line farthest apart: where its beam starts and ends.
+function beamEnds(group) {
+  const p = group.map(([r, c]) => cellCenter(r, c));
+  let best = [p[0], p[0]], d = -1;
+  for (const a of p) for (const b of p) {
+    const e = Math.hypot(b.x - a.x, b.y - a.y);
+    if (e > d) { d = e; best = [a, b]; }
+  }
+  // Sweep left to right (or top to bottom), so beams feel the same each time.
+  const [a, b] = best;
+  return (a.x < b.x - 1 || (Math.abs(a.x - b.x) <= 1 && a.y < b.y)) ? { a, b } : { a: b, b: a };
+}
+
+function beam(fx, a, b, delay) {
+  const size = cells[0].offsetWidth;
+  const el = document.createElement('b');
+  el.className = 'beam';
+  const len = Math.hypot(b.x - a.x, b.y - a.y) + size;
+  const ang = Math.atan2(b.y - a.y, b.x - a.x);
+  el.style.left = `${a.x - Math.cos(ang) * size / 2}px`;
+  el.style.top = `${a.y - Math.sin(ang) * size / 2}px`;
+  el.style.width = `${len}px`;
+  el.style.setProperty('--s', `${size}px`);
+  el.style.transform = `rotate(${ang}rad)`;
+  el.style.animationDelay = `${delay}ms`;
+  fx.append(el);
+}
+
+// Ripple: a ring of light spreads from the piece.
+function ringAt(fx, o, size) {
+  const el = document.createElement('b');
+  el.className = 'wave';
+  el.style.left = `${o.x}px`;
+  el.style.top = `${o.y}px`;
+  el.style.setProperty('--s', `${size}px`);
+  fx.append(el);
+}
+
+// Laser: bright sparks spray off each block as the beam hits it.
+function sparksAt(fx, at, size, color) {
+  for (let k = 0; k < 4; k++) {
+    const a = Math.random() * Math.PI * 2;
+    const d = size * (0.6 + Math.random() * 1.1);
+    const bit = document.createElement('i');
+    bit.className = 'spk';
+    bit.style.left = `${at.x}px`;
+    bit.style.top = `${at.y}px`;
+    bit.style.setProperty('--s', `${size * 0.16}px`);
+    bit.style.setProperty('--dx', `${Math.cos(a) * d}px`);
+    bit.style.setProperty('--dy', `${Math.sin(a) * d}px`);
+    bit.style.setProperty('--rot', '0deg');
+    if (color) bit.style.color = color;
+    fx.append(bit);
+  }
+}
+
+// Shatter: the block breaks into 4 pieces that tumble down and off the board.
+function breakAt(fx, at, color, side) {
+  const size = cells[0].offsetWidth;
+  const h = size / 2;
+  [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sy]) => {
+    const bit = document.createElement('i');
+    bit.className = 'chunk';
+    bit.style.left = `${at.x + (sx * h) / 2}px`;
+    bit.style.top = `${at.y + (sy * h) / 2}px`;
+    bit.style.setProperty('--s', `${h - 1}px`);
+    bit.style.setProperty('--dx', `${(sx * 0.5 + Math.sign(side) * 0.3 + (Math.random() - 0.5) * 0.6) * size}px`);
+    bit.style.setProperty('--dy', `${(sy * 0.2 - 0.9 - Math.random() * 0.5) * size}px`);
+    bit.style.setProperty('--fall', `${size * (3 + Math.random() * 2)}px`);
+    bit.style.setProperty('--rot', `${(sx * 120 + (Math.random() - 0.5) * 240)}deg`);
+    if (color) { bit.style.background = color; bit.style.color = color; }
+    fx.append(bit);
+  });
+}
+
+// Ripple: 5 chips fly out of a block, away from where the wave started, and drop.
 function shardsAt(fx, at, o, color) {
   const size = cells[0].offsetWidth;
   const ux = at.x - o.x, uy = at.y - o.y, len = Math.hypot(ux, uy) || 1;
-  for (let k = 0; k < 3; k++) {
-    const a = Math.atan2(uy / len, ux / len) + (Math.random() - 0.5) * 2.2 + (len < 2 ? Math.random() * 6.3 : 0);
-    const d = size * (0.6 + Math.random() * 0.9);
+  for (let k = 0; k < 5; k++) {
+    const a = Math.atan2(uy / len, ux / len) + (Math.random() - 0.5) * 2.4 + (len < 2 ? Math.random() * 6.3 : 0);
+    const d = size * (0.9 + Math.random() * 1.3);
     const bit = document.createElement('i');
     bit.style.left = `${at.x + (Math.random() - 0.5) * size * 0.5}px`;
     bit.style.top = `${at.y + (Math.random() - 0.5) * size * 0.5}px`;
-    bit.style.setProperty('--s', `${size * (0.22 + Math.random() * 0.16)}px`);
+    bit.style.setProperty('--s', `${size * (0.24 + Math.random() * 0.2)}px`);
     bit.style.setProperty('--dx', `${Math.cos(a) * d}px`);
-    bit.style.setProperty('--dy', `${Math.sin(a) * d - size * 0.5}px`);
-    bit.style.setProperty('--rot', `${(Math.random() - 0.5) * 540}deg`);
+    bit.style.setProperty('--dy', `${Math.sin(a) * d - size * 0.6}px`);
+    bit.style.setProperty('--rot', `${(Math.random() - 0.5) * 600}deg`);
     if (color) { bit.style.background = color; bit.style.color = color; }
     fx.append(bit);
   }
@@ -748,7 +909,7 @@ function cheerLines(n) {
   flash.className = 'board-flash';
   boardEl.appendChild(flash);
   flash.addEventListener('animationend', () => flash.remove());
-  boardEl.classList.remove('jolt');
+  boardEl.classList.remove('jolt', 'bump');
   void boardEl.offsetWidth;
   boardEl.classList.add('jolt');
   setTimeout(() => boardEl.classList.remove('jolt'), 320);
@@ -1029,6 +1190,7 @@ function loadGame() {
   board = g.board;
   tray = g.tray;
   score = g.score;
+  pickFx(true);
   trickSet = !!g.trickSet;
   newBest = false;
   overEl.hidden = true;
@@ -1039,6 +1201,7 @@ function newGame() {
   board = G.empty();
   trickSet = false;
   score = newScore();
+  pickFx(true);
   newBest = false;
   overEl.hidden = true;
   if (daily()) {
