@@ -14,8 +14,8 @@
 // A cell is null (empty) or a color index, or { c, s } for a special.
 
 import { TRAY_SIZE, COLORS, MAX_REROLLS, CELL_POINTS, CLEAR_POINTS, WIPE_BONUS, STREAK_GRACE, seededRng,
-  specialOf, addSpecials, SPECIAL_CHANCE, SPECIAL_KINDS,
-} from './logic.js?v=51';
+  specialOf, addSpecials, SPECIAL_CHANCE, SPECIAL_KINDS, dealFairTray, dealTrickTrayBy,
+} from './logic.js?v=52';
 
 export const HEX_RADIUS = 4;
 const SPAN = HEX_RADIUS * 2 + 1;
@@ -175,19 +175,52 @@ export function playHexMove(board, piece, q, r) {
 
 // ---------- Dealing ----------
 
-function randomHexTray(rng) {
-  return Array.from({ length: TRAY_SIZE }, () => {
-    const { pieces } = HEX_SHAPES[Math.floor(rng() * HEX_SHAPES.length)];
-    return { ...pieces[Math.floor(rng() * pieces.length)], color: Math.floor(rng() * COLORS) };
-  });
+const randomHexPiece = rng => {
+  const { pieces } = HEX_SHAPES[Math.floor(rng() * HEX_SHAPES.length)];
+  return { ...pieces[Math.floor(rng() * pieces.length)], color: Math.floor(rng() * COLORS) };
+};
+
+const randomHexTray = rng => Array.from({ length: TRAY_SIZE }, () => randomHexPiece(rng));
+
+// A move for the fair-deal search: the board after placing and clearing.
+export const hexMove = (board, piece, q, r) => playHexMove(board, piece, q, r).board;
+export const hexGravityMove = (board, piece, q, r) => playHexGravityMove(board, piece, q, r).board;
+
+export const HEX_TRICK_MIN_FILLED = 15; // a quarter of the board, like Classic
+
+// Every [q, r] where the piece lies fully on the board (see fitsAnywhereHex
+// for why q and r start below -HEX_RADIUS).
+const spotCache = new Map();
+function hexSpots(piece) {
+  if (!spotCache.has(piece.id)) {
+    const list = [];
+    for (let r = -2 * HEX_RADIUS; r <= HEX_RADIUS; r++) {
+      for (let q = -2 * HEX_RADIUS; q <= HEX_RADIUS; q++) {
+        if (piece.cells.every(([dq, dr]) => onBoard(q + dq, r + dr))) list.push([q, r]);
+      }
+    }
+    spotCache.set(piece.id, list);
+  }
+  return spotCache.get(piece.id);
 }
 
-// Like Classic's dealTray: with a board, a set where nothing fits is rerolled.
-export function dealHexTray(rng = Math.random, board = null) {
-  let tray = randomHexTray(rng);
-  for (let i = 0; board && i < MAX_REROLLS && isHexGameOver(board, tray); i++) tray = randomHexTray(rng);
-  return tray;
+// The rules object for the fair-deal search in logic.js.
+export function hexRules(move = hexMove) {
+  return {
+    spots: hexSpots, canPlace: canPlaceHex, move,
+    filled: b => HEX_CELLS.filter(([q, r]) => getCell(b, q, r) !== null).length,
+    pieces: HEX_PIECES, randomPiece: randomHexPiece, minFilled: HEX_TRICK_MIN_FILLED,
+  };
 }
+
+// Like Classic's dealTray: with a board, sets are rerolled until all three
+// can be placed in some order. move: hexMove, or hexGravityMove for Hex Gravity.
+export function dealHexTray(rng = Math.random, board = null, move = hexMove) {
+  return dealFairTray(hexRules(move), rng, board, randomHexTray);
+}
+
+// A trick set for this board (see dealTrickTrayBy), or null.
+export const dealHexTrickTray = (rng = Math.random, board, move = hexMove) => dealTrickTrayBy(hexRules(move), rng, board);
 
 // Hex Daily Duel: set number n of the day, the same for everyone (seeded by
 // the date and set number, like Classic's dailyTray, with its own seed).
@@ -196,7 +229,7 @@ export function dealHexTray(rng = Math.random, board = null) {
 // game: 'hex' or 'hexgravity'; each has its own pieces.
 export function dailyHexTray(day, n, board = null, specials = false, game = 'hex') {
   const seed = specials ? `blockit-${game}-special-${day}-${n}` : `blockit-${game}-${day}-${n}`;
-  const tray = dealHexTray(seededRng(seed), board);
+  const tray = dealHexTray(seededRng(seed), board, game === 'hexgravity' ? hexGravityMove : hexMove);
   return specials ? addSpecials(tray, seededRng(`${seed}-specials`), SPECIAL_CHANCE, SPECIAL_KINDS) : tray;
 }
 

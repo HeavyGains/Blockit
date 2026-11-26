@@ -131,18 +131,29 @@ test('previewLines: null where the piece cannot go, else the lines it would clea
   assert.equal(b[7][3], null, 'board is not changed');
 });
 
-test('a fresh set is rerolled until at least one piece fits', () => {
-  // Checkerboard: only the 1-cell dot fits anywhere.
-  const b = emptyBoard().map((line, r) => line.map((_, c) => ((r + c) % 2 ? 0 : null)));
-  const dot = PIECES.findIndex(p => p.id === 'dot');
-  const sq2 = PIECES.findIndex(p => p.id === 'sq2');
-  // First set: three 2x2 squares (no fit). Second set: has a dot.
-  const picks = [sq2, sq2, sq2, sq2, dot, sq2];
+// An rng that deals these pieces in order (color 0), round and round.
+function dealer(picks) {
   let i = 0;
-  const rng = () => { const k = Math.floor(i / 2); const isColor = i % 2; i++; return isColor ? 0 : (picks[k] + 0.5) / PIECES.length; };
-  const tray = dealTray(rng, b);
-  assert.ok(!isGameOver(b, tray));
-  assert.ok(tray.some(p => p.id === 'dot'));
+  return () => {
+    const k = Math.floor(i / 2) % picks.length, isColor = i % 2;
+    i++;
+    return isColor ? 0 : (PIECES.findIndex(p => p.id === picks[k]) + 0.5) / PIECES.length;
+  };
+}
+
+// Checkerboard: only the 1-cell dot fits anywhere, and no line can clear.
+const checkers = () => emptyBoard().map((line, r) => line.map((_, c) => ((r + c) % 2 ? 0 : null)));
+
+test('a fresh set is rerolled until all three pieces fit', () => {
+  const sets = ['sq2', 'sq2', 'sq2', 'dot', 'sq2', 'dot', 'dot', 'dot', 'dot'];
+  const tray = dealTray(dealer(sets), checkers());
+  assert.deepEqual(tray.map(p => p.id), ['dot', 'dot', 'dot']);
+});
+
+test('if no set fits whole, the deal falls back to one where at least one piece fits', () => {
+  const tray = dealTray(dealer(['sq2', 'sq2', 'sq2', 'sq2', 'dot', 'sq2']), checkers());
+  assert.ok(!isGameOver(checkers(), tray));
+  assert.deepEqual(tray.map(p => p.id), ['sq2', 'dot', 'sq2']);
 });
 
 test('on a packed board the deal gives up after MAX_REROLLS and returns a set', () => {
