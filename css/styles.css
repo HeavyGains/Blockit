@@ -1636,10 +1636,10 @@
 
 
 /* ---------- Neon cubes ----------
-   Cubes drawn in neon light. Each hex is a glowing outline (the cell's
-   background is the rim) around 3 dark-tinted cube faces (brightest top,
-   middle left, darkest right) with glowing seams between them. On the square
-   board blocks are neon outlines with a 3-tone bevel inside. */
+   Cubes drawn in neon light, no shading (Jason). Each hex is a glowing
+   outline (the cell's background is the rim) around one flat dark fill, with
+   glowing lines where the 3 cube faces meet. On the square board blocks are
+   neon outlines around the same flat fill. */
 
 [data-style="neoncubes"] {
   --bg: #06060b;
@@ -1662,10 +1662,7 @@
 [data-style="neoncubes"] .cell[data-c]::after {
   inset: 4px;
   border-radius: 3px;
-  background: linear-gradient(135deg,
-    color-mix(in srgb, var(--k) 55%, var(--board)) 0 33%,
-    color-mix(in srgb, var(--k) 30%, var(--board)) 0 67%,
-    color-mix(in srgb, var(--k) 12%, var(--board)) 0);
+  background: color-mix(in srgb, var(--k) 18%, var(--board));
   box-shadow: inset 0 0 0 2px var(--k), 0 0 10px var(--k);
 }
 [data-style="neoncubes"] .logo i {
@@ -1680,15 +1677,13 @@
 [data-style="neoncubes"] .hex .cell[data-c] { background: var(--k); }
 [data-style="neoncubes"] .hex .cell[data-c]::after {
   --seam: color-mix(in srgb, var(--k) 70%, #fff);
+  --face: color-mix(in srgb, var(--k) 18%, var(--board));
   inset: 2px;
   box-shadow: none;
   background: conic-gradient(from -60deg,
-    var(--seam) 0 2deg,
-    color-mix(in srgb, var(--k) 55%, var(--board)) 0 118deg,
-    var(--seam) 0 122deg,
-    color-mix(in srgb, var(--k) 14%, var(--board)) 0 238deg,
-    var(--seam) 0 242deg,
-    color-mix(in srgb, var(--k) 32%, var(--board)) 0 358deg,
+    var(--seam) 0 3deg, var(--face) 0 117deg,
+    var(--seam) 0 123deg, var(--face) 0 237deg,
+    var(--seam) 0 243deg, var(--face) 0 357deg,
     var(--seam) 0);
 }
 [data-style="neoncubes"] .piece.hex { filter: drop-shadow(0 0 4px rgba(45, 226, 255, 0.5)); }
