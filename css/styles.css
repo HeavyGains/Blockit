@@ -1633,3 +1633,70 @@
 [data-style="july4"] .pop { text-shadow: 0 0 8px #ff4b55, 0 2px 4px rgba(0, 0, 0, 0.5); }
 [data-style="july4"] .streak { background: #ff4b55; color: #fff; }
 [data-style="july4"] .sheet { background: #132048; box-shadow: 0 0 0 2px #c8283a; }
+
+
+/* ---------- Neon cubes ----------
+   Cubes drawn in neon light. Each hex is a glowing outline (the cell's
+   background is the rim) around 3 dark-tinted cube faces (brightest top,
+   middle left, darkest right) with glowing seams between them. On the square
+   board blocks are neon outlines with a 3-tone bevel inside. */
+
+[data-style="neoncubes"] {
+  --bg: #06060b;
+  --board: #0a0a14;
+  --empty: rgba(90, 110, 255, 0.12);
+  --text: #eef3ff;
+  --muted: #7d88b8;
+  --accent: #2de2ff;
+  --c0: #ff3b6b;
+  --c1: #ffc21a;
+  --c2: #39ff88;
+  --c3: #2de2ff;
+  --c4: #b44dff;
+  --c5: #ff4df0;
+}
+
+[data-style="neoncubes"] .board { box-shadow: 0 0 0 1px rgba(45, 226, 255, 0.35), 0 0 24px rgba(45, 226, 255, 0.15); }
+
+/* Square board: neon outline, 3 tones inside (light top-left, dark bottom-right). */
+[data-style="neoncubes"] .cell[data-c]::after {
+  inset: 4px;
+  border-radius: 3px;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--k) 55%, var(--board)) 0 33%,
+    color-mix(in srgb, var(--k) 30%, var(--board)) 0 67%,
+    color-mix(in srgb, var(--k) 12%, var(--board)) 0);
+  box-shadow: inset 0 0 0 2px var(--k), 0 0 10px var(--k);
+}
+[data-style="neoncubes"] .logo i {
+  color: #fff;
+  background: color-mix(in srgb, var(--k) 30%, #0a0a14);
+  box-shadow: inset 0 0 0 1.5px var(--k), 0 0 6px var(--k);
+  text-shadow: 0 0 6px var(--k);
+}
+
+/* Hex: bright rim, then 3 faces split from the centre like Cubes, with thin
+   bright lines along the 3 seams. */
+[data-style="neoncubes"] .hex .cell[data-c] { background: var(--k); }
+[data-style="neoncubes"] .hex .cell[data-c]::after {
+  --seam: color-mix(in srgb, var(--k) 70%, #fff);
+  inset: 2px;
+  box-shadow: none;
+  background: conic-gradient(from -60deg,
+    var(--seam) 0 2deg,
+    color-mix(in srgb, var(--k) 55%, var(--board)) 0 118deg,
+    var(--seam) 0 122deg,
+    color-mix(in srgb, var(--k) 14%, var(--board)) 0 238deg,
+    var(--seam) 0 242deg,
+    color-mix(in srgb, var(--k) 32%, var(--board)) 0 358deg,
+    var(--seam) 0);
+}
+[data-style="neoncubes"] .piece.hex { filter: drop-shadow(0 0 4px rgba(45, 226, 255, 0.5)); }
+[data-style="neoncubes"] .board.hex .cell[data-c] { filter: drop-shadow(0 0 3px var(--k)); }
+
+[data-style="neoncubes"] .cell.clearing::after,
+[data-style="neoncubes"] .hex .cell.clearing::after { background: #fff; box-shadow: 0 0 18px 4px var(--k, #fff); }
+
+[data-style="neoncubes"] .score { text-shadow: 0 0 12px rgba(45, 226, 255, 0.8); }
+[data-style="neoncubes"] .sheet { box-shadow: 0 0 0 1px rgba(45, 226, 255, 0.4), 0 0 30px rgba(45, 226, 255, 0.2); }
+[data-style="neoncubes"] .primary-btn { color: #06060b; box-shadow: 0 0 14px rgba(45, 226, 255, 0.7); }
